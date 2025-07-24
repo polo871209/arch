@@ -32,7 +32,7 @@ func NewUserServer(repo repository.UserRepository) *UserServer {
 func (s *UserServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
 	// Validate input
 	if err := validation.ValidateCreateUser(req.Name, req.Email, req.Age); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 
 	// Create domain model
@@ -58,7 +58,7 @@ func (s *UserServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) 
 // GetUser retrieves a user by ID
 func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	if err := validation.ValidateUserID(req.Id); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 
 	user, err := s.repo.GetByID(ctx, req.Id)
@@ -79,7 +79,7 @@ func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.G
 // UpdateUser updates an existing user with improved validation
 func (s *UserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 	if err := validation.ValidateUpdateUser(req.Id, req.Name, req.Email, req.Age); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 
 	// Get existing user
@@ -124,7 +124,7 @@ func (s *UserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) 
 // DeleteUser deletes a user by ID
 func (s *UserServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	if err := validation.ValidateUserID(req.Id); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 
 	if err := s.repo.Delete(ctx, req.Id); err != nil {

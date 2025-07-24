@@ -21,6 +21,10 @@ help:
     @echo "  db-status    Show migration status"
     @echo "  db-migrate   Create new migration file"
     @echo ""
+    @echo "🔄 Cache:"
+    @echo "  cache-flush  Flush all cache data"
+    @echo "  cache-stats  Show cache statistics"
+    @echo ""
     @echo "🚀 Services:"
     @echo "  start        Start both servers with PostgreSQL"
     @echo "  server       Start Go server only (foreground)"
@@ -98,9 +102,9 @@ build:
 
 # Start both servers with PostgreSQL
 start:
-    @echo "🚀 Starting services with PostgreSQL..."
-    @echo "   Starting PostgreSQL container..."
-    docker-compose up -d postgres
+    @echo "🚀 Starting services with PostgreSQL and Valkey..."
+    @echo "   Starting PostgreSQL and Valkey containers..."
+    docker-compose up -d postgres valkey
     @echo "   Waiting for PostgreSQL to be ready..."
     ./scripts/wait_for_postgres.sh
     @echo "   Running database migrations..."
@@ -109,8 +113,9 @@ start:
     nohup sh -c 'go run cmd/server/main.go' > logs/server.log 2>&1 & echo $! > logs/server.pid
     @sleep 2
     nohup sh -c 'cd client && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000' > logs/client.log 2>&1 & echo $! > logs/client.pid
-    @echo "✅ Services started with PostgreSQL!"
+    @echo "✅ Services started with PostgreSQL and Valkey!"
     @echo "   PostgreSQL: localhost:5433"
+    @echo "   Valkey: localhost:6380"
     @echo "   gRPC Server: localhost:50051"
     @echo "   FastAPI Client: http://localhost:8000"
 
@@ -127,8 +132,8 @@ stop:
     @echo "🛑 Stopping services..."
     @if [ -f logs/server.pid ]; then kill $(cat logs/server.pid) 2>/dev/null || true; rm -f logs/server.pid; fi
     @if [ -f logs/client.pid ]; then kill $(cat logs/client.pid) 2>/dev/null || true; rm -f logs/client.pid; fi
-    @echo "   Stopping PostgreSQL container..."
-    docker-compose down postgres
+    @echo "   Stopping PostgreSQL and Valkey containers..."
+    docker-compose down
     @echo "✅ Services stopped"
 
 # Test API endpoints
@@ -176,3 +181,14 @@ docs:
 clean:
     @just stop
     rm -rf logs/*.log logs/*.pid bin/ __pycache__ .pytest_cache
+
+# Cache commands
+cache-flush:
+    @echo "🔄 Flushing cache..."
+    docker exec rpc-valkey valkey-cli FLUSHALL
+    @echo "✅ Cache flushed"
+
+cache-stats:
+    @echo "📊 Cache statistics:"
+    docker exec rpc-valkey valkey-cli INFO memory | grep -E "used_memory_human|maxmemory_human"
+    docker exec rpc-valkey valkey-cli DBSIZE

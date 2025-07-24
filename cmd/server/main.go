@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	"grpc-server/internal/cache"
 	"grpc-server/internal/config"
 	"grpc-server/internal/database"
 	"grpc-server/internal/repository/postgres"
@@ -71,8 +72,17 @@ func main() {
 	// Create PostgreSQL repository
 	userRepo := postgres.NewUserRepository(dbConn)
 
-	// Create and register the user service
-	userService := server.NewUserServer(userRepo)
+	// Connect to Valkey cache
+	slog.Info("Connecting to Valkey cache")
+	valkeyCache, err := cache.NewValkeyCache(&cfg.Cache, logger)
+	if err != nil {
+		slog.Error("Failed to connect to cache", "error", err)
+		os.Exit(1)
+	}
+	defer valkeyCache.Close()
+
+	// Create and register the cached user service
+	userService := server.NewCachedUserServer(userRepo, valkeyCache, logger)
 	pb.RegisterUserServiceServer(grpcServer, userService)
 
 	// Enable reflection if configured
