@@ -13,12 +13,17 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"grpc-server/internal/config"
-	"grpc-server/internal/repository/memory"
+	"grpc-server/internal/database"
+	"grpc-server/internal/repository/postgres"
 	"grpc-server/internal/server"
 	pb "grpc-server/pkg/pb"
 )
 
 func main() {
+	// Create context for the entire application
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Load configuration
 	cfg := config.Load()
 
@@ -50,12 +55,25 @@ func main() {
 		grpc.MaxSendMsgSize(cfg.Server.MaxSendMsgSize),
 	)
 
-	// Initialize repository and server
-	userRepo := memory.NewUserRepository()
-	userServer := server.NewUserServer(userRepo)
+	// Connect to PostgreSQL database
+	slog.Info("Connecting to PostgreSQL database")
+	dbConn, err := database.Connect(ctx, &cfg.Database)
+	if err != nil {
+		slog.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if dbConn != nil {
+			dbConn.Close(ctx)
+		}
+	}()
 
-	// Register services
-	pb.RegisterUserServiceServer(grpcServer, userServer)
+	// Create PostgreSQL repository
+	userRepo := postgres.NewUserRepository(dbConn)
+
+	// Create and register the user service
+	userService := server.NewUserServer(userRepo)
+	pb.RegisterUserServiceServer(grpcServer, userService)
 
 	// Enable reflection if configured
 	if cfg.Server.EnableReflection {
@@ -64,31 +82,28 @@ func main() {
 	}
 
 	// Setup graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	// Start server in goroutine
 	go func() {
-		<-sigChan
-		slog.Info("Shutdown signal received, stopping server...")
-		grpcServer.GracefulStop()
-		cancel()
+		slog.Info("gRPC server starting",
+			"address", address,
+			"max_recv_size", cfg.Server.MaxRecvMsgSize,
+			"max_send_size", cfg.Server.MaxSendMsgSize,
+			"reflection", cfg.Server.EnableReflection,
+		)
+		if err := grpcServer.Serve(listener); err != nil {
+			slog.Error("gRPC server failed", "error", err)
+			cancel()
+		}
 	}()
 
-	slog.Info("gRPC server starting",
-		"address", address,
-		"max_recv_size", cfg.Server.MaxRecvMsgSize,
-		"max_send_size", cfg.Server.MaxSendMsgSize,
-		"reflection", cfg.Server.EnableReflection)
+	// Wait for shutdown signal
+	<-sigChan
+	slog.Info("Shutdown signal received, stopping server...")
 
-	// Start serving
-	if err := grpcServer.Serve(listener); err != nil {
-		slog.Error("Failed to serve gRPC server", "error", err)
-		os.Exit(1)
-	}
-
-	<-ctx.Done()
-	slog.Info("Server stopped")
+	// Graceful shutdown
+	grpcServer.GracefulStop()
+	slog.Info("Server stopped gracefully")
 }

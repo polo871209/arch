@@ -1,7 +1,45 @@
-# User Management gRPC Service - Justfile
+# gRPC Service - Justfile
 
 # Default: Start both servers
 default: start
+
+# Show available commands
+help:
+    @echo "🎯 Available commands:"
+    @echo ""
+    @echo "📦 Setup & Dependencies:"
+    @echo "  install      Install all dependencies"
+    @echo ""
+    @echo "🔧 Code Generation:"
+    @echo "  proto        Generate protobuf files"
+    @echo "  sqlc         Generate SQL code with sqlc"
+    @echo ""
+    @echo "🗄️ Database:"
+    @echo "  db-up        Run database migrations (Docker PostgreSQL)"
+    @echo "  db-down      Rollback database migrations (Docker PostgreSQL)"
+    @echo "  db-reset     Reset database (down all, then up)"
+    @echo "  db-status    Show migration status"
+    @echo "  db-migrate   Create new migration file"
+    @echo ""
+    @echo "🚀 Services:"
+    @echo "  start        Start both servers with PostgreSQL"
+    @echo "  server       Start Go server only (foreground)"
+    @echo "  client       Start Python client only (foreground)"
+    @echo "  stop         Stop all services"
+    @echo ""
+    @echo "🧪 Testing & Quality:"
+    @echo "  test         Test API endpoints"
+    @echo "  build        Build Go server"
+    @echo "  fmt          Format code"
+    @echo "  lint         Lint code"
+    @echo ""
+    @echo "📊 Monitoring:"
+    @echo "  status       Check service status"
+    @echo "  logs         Show recent logs"
+    @echo "  docs         Open API documentation"
+    @echo ""
+    @echo "🧹 Cleanup:"
+    @echo "  clean        Clean up logs and build artifacts"
 
 # Install all dependencies
 install:
@@ -16,20 +54,63 @@ proto:
     ./scripts/generate_proto.sh
     @echo "✅ Protobuf files generated"
 
+# Generate SQL code using sqlc
+sqlc:
+    @echo "🗄️ Generating SQL code..."
+    sqlc generate
+    @echo "✅ SQL code generated"
+
+# Database migration up
+db-up:
+    @echo "⬆️ Running database migrations..."
+    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" up
+    @echo "✅ Migrations applied"
+
+# Database migration down
+db-down:
+    @echo "⬇️ Rolling back database migrations..."
+    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" down
+    @echo "✅ Migrations rolled back"
+
+# Create a new migration
+db-migrate name:
+    @echo "📝 Creating migration: {{name}}"
+    goose -dir internal/database/migrations create {{name}} sql
+    @echo "✅ Migration created"
+
+# Reset database (down all, then up)
+db-reset:
+    @echo "🔄 Resetting database..."
+    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" reset
+    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" up
+    @echo "✅ Database reset complete"
+
+# Show migration status
+db-status:
+    @echo "📊 Database migration status:"
+    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" status
+
 # Build Go server
 build:
     @echo "🏗️ Building server..."
     go build -o bin/server cmd/server/main.go
     @echo "✅ Server built"
 
-# Start both servers
+# Start both servers with PostgreSQL
 start:
-    @echo "🚀 Starting services..."
+    @echo "🚀 Starting services with PostgreSQL..."
+    @echo "   Starting PostgreSQL container..."
+    docker-compose up -d postgres
+    @echo "   Waiting for PostgreSQL to be ready..."
+    ./scripts/wait_for_postgres.sh
+    @echo "   Running database migrations..."
+    @just db-up
     @mkdir -p logs
     nohup sh -c 'go run cmd/server/main.go' > logs/server.log 2>&1 & echo $! > logs/server.pid
     @sleep 2
     nohup sh -c 'cd client && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000' > logs/client.log 2>&1 & echo $! > logs/client.pid
-    @echo "✅ Services started!"
+    @echo "✅ Services started with PostgreSQL!"
+    @echo "   PostgreSQL: localhost:5433"
     @echo "   gRPC Server: localhost:50051"
     @echo "   FastAPI Client: http://localhost:8000"
 
@@ -46,6 +127,8 @@ stop:
     @echo "🛑 Stopping services..."
     @if [ -f logs/server.pid ]; then kill $(cat logs/server.pid) 2>/dev/null || true; rm -f logs/server.pid; fi
     @if [ -f logs/client.pid ]; then kill $(cat logs/client.pid) 2>/dev/null || true; rm -f logs/client.pid; fi
+    @echo "   Stopping PostgreSQL container..."
+    docker-compose down postgres
     @echo "✅ Services stopped"
 
 # Test API endpoints

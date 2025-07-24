@@ -7,8 +7,9 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server ServerConfig
-	Logger LoggerConfig
+	Server   ServerConfig
+	Logger   LoggerConfig
+	Database DatabaseConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -25,6 +26,15 @@ type LoggerConfig struct {
 	Format string // "json" or "text"
 }
 
+// DatabaseConfig holds database configuration
+type DatabaseConfig struct {
+	URL         string
+	MaxConns    int
+	MinConns    int
+	MaxIdleTime int // seconds
+	MaxLifetime int // seconds
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -32,11 +42,18 @@ func Load() *Config {
 			Port:             getEnv("SERVER_PORT", "50051"),
 			MaxRecvMsgSize:   getEnvInt("MAX_RECV_MSG_SIZE", 4*1024*1024), // 4MB
 			MaxSendMsgSize:   getEnvInt("MAX_SEND_MSG_SIZE", 4*1024*1024), // 4MB
-			EnableReflection: getEnvBool("ENABLE_REFLECTION", true),
+			EnableReflection: true,                                        // Always enable reflection for development
 		},
 		Logger: LoggerConfig{
 			Level:  getLogLevel("LOG_LEVEL", slog.LevelInfo),
 			Format: getEnv("LOG_FORMAT", "json"),
+		},
+		Database: DatabaseConfig{
+			URL:         getEnv("DATABASE_URL", "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable"),
+			MaxConns:    getEnvInt("DB_MAX_CONNS", 25),
+			MinConns:    getEnvInt("DB_MIN_CONNS", 5),
+			MaxIdleTime: getEnvInt("DB_MAX_IDLE_TIME", 300), // 5 minutes
+			MaxLifetime: getEnvInt("DB_MAX_LIFETIME", 3600), // 1 hour
 		},
 	}
 }
@@ -55,13 +72,6 @@ func getEnvInt(key string, defaultValue int) int {
 			// For simplicity, returning default on any parsing issues
 			return defaultValue
 		}
-	}
-	return defaultValue
-}
-
-func getEnvBool(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		return value == "true" || value == "1"
 	}
 	return defaultValue
 }
