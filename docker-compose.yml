@@ -34,6 +34,39 @@ services:
     restart: unless-stopped
     command: valkey-server --appendonly yes
 
+  grpc-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rpc-grpc-server
+    ports:
+      - "50051:50051"
+    environment:
+      - DATABASE_URL=postgres://rpc_user:rpc_password@postgres:5432/rpc_dev?sslmode=disable
+      - CACHE_URL=valkey://valkey:6379
+      - LOG_LEVEL=INFO
+      - SERVER_PORT=50051
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+
+  fastapi-client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: rpc-fastapi-client
+    ports:
+      - "8000:8000"
+    environment:
+      - GRPC_HOST=grpc-server
+      - GRPC_PORT=50051
+    depends_on:
+      - grpc-server
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   valkey_data:

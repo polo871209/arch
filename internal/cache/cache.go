@@ -33,8 +33,23 @@ type ValkeyCache struct {
 
 // NewValkeyCache creates a new Valkey cache instance
 func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache, error) {
+	// Parse the URL to extract the host:port
+	// For now, simple parsing - expecting format: valkey://host:port
+	url := cfg.URL
+	if url == "" {
+		url = "valkey://localhost:6380"
+	}
+
+	// Extract host:port from valkey://host:port
+	address := "localhost:6380" // default
+	if len(url) > 9 && url[:9] == "valkey://" {
+		address = url[9:] // Extract everything after "valkey://"
+	}
+
+	logger.Info("Creating Valkey client", "address", address)
+
 	client, err := valkey.NewClient(valkey.ClientOption{
-		InitAddress: []string{"localhost:6380"},
+		InitAddress: []string{address},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create valkey client: %w", err)

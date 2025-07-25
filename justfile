@@ -102,18 +102,12 @@ build:
 
 # Start both servers with PostgreSQL
 start:
-    @echo "🚀 Starting services with PostgreSQL and Valkey..."
-    @echo "   Starting PostgreSQL and Valkey containers..."
-    docker-compose up -d postgres valkey
-    @echo "   Waiting for PostgreSQL to be ready..."
-    ./scripts/wait_for_postgres.sh
-    @echo "   Running database migrations..."
-    @just db-up
-    @mkdir -p logs
-    nohup sh -c 'go run cmd/server/main.go' > logs/server.log 2>&1 & echo $! > logs/server.pid
-    @sleep 2
-    nohup sh -c 'cd client && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000' > logs/client.log 2>&1 & echo $! > logs/client.pid
-    @echo "✅ Services started with PostgreSQL and Valkey!"
+    @echo "🚀 Starting services with Docker Compose..."
+    @echo "   Building and starting all services..."
+    docker-compose up --build -d
+    @echo "   Waiting for services to be ready..."
+    @sleep 5
+    @echo "✅ All services started!"
     @echo "   PostgreSQL: localhost:5433"
     @echo "   Valkey: localhost:6380"
     @echo "   gRPC Server: localhost:50051"
@@ -130,9 +124,6 @@ client:
 # Stop all services
 stop:
     @echo "🛑 Stopping services..."
-    @if [ -f logs/server.pid ]; then kill $(cat logs/server.pid) 2>/dev/null || true; rm -f logs/server.pid; fi
-    @if [ -f logs/client.pid ]; then kill $(cat logs/client.pid) 2>/dev/null || true; rm -f logs/client.pid; fi
-    @echo "   Stopping PostgreSQL and Valkey containers..."
     docker-compose down
     @echo "✅ Services stopped"
 
@@ -147,14 +138,12 @@ test:
 # Show recent logs
 logs:
     @echo "📋 Recent logs:"
-    @if [ -f logs/server.log ]; then echo "=== Server ==="; tail -10 logs/server.log; fi
-    @if [ -f logs/client.log ]; then echo "=== Client ==="; tail -10 logs/client.log; fi
+    docker-compose logs -f
 
 # Check service status
 status:
     @echo "📊 Service status:"
-    @if [ -f logs/server.pid ] && kill -0 $(cat logs/server.pid) 2>/dev/null; then echo "✅ gRPC Server: Running (PID: $(cat logs/server.pid))"; else echo "❌ gRPC Server: Stopped"; fi
-    @if [ -f logs/client.pid ] && kill -0 $(cat logs/client.pid) 2>/dev/null; then echo "✅ FastAPI Client: Running (PID: $(cat logs/client.pid))"; else echo "❌ FastAPI Client: Stopped"; fi
+    docker-compose ps
 
 # Format code
 fmt:
@@ -180,6 +169,7 @@ docs:
 # Clean up
 clean:
     @just stop
+    docker-compose down --volumes --remove-orphans
     rm -rf logs/*.log logs/*.pid bin/ __pycache__ .pytest_cache
 
 # Cache commands

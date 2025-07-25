@@ -11,7 +11,7 @@ var (
 	ErrNameTooLong    = errors.New("name must be 100 characters or less")
 	ErrEmailRequired  = errors.New("email is required")
 	ErrEmailInvalid   = errors.New("email format is invalid")
-	ErrAgeInvalid     = errors.New("age must be between 0 and 150")
+	ErrAgeInvalid     = errors.New("age must be between 1 and 149")
 	ErrUserIDRequired = errors.New("user ID is required")
 )
 
@@ -84,7 +84,7 @@ func validateEmail(email string) error {
 }
 
 func validateAge(age int32) error {
-	if age < 0 || age > 150 {
+	if age <= 0 || age >= 150 {
 		return ErrAgeInvalid
 	}
 	return nil
