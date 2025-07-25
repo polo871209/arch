@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fastapi-client-secret
+  namespace: rpc
+type: Opaque
+stringData:
+  GRPC_HOST: grpc-server-service.rpc.svc.cluster.local
+  GRPC_PORT: "50051"
+  API_HOST: 0.0.0.0
+  API_PORT: "8000"
+  LOG_LEVEL: INFO
+  DEBUG: "false"
+  API_RELOAD: "false"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-client
+  namespace: rpc
+  labels:
+    app: fastapi-client
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastapi-client
+  template:
+    metadata:
+      labels:
+        app: fastapi-client
+        component: frontend
+    spec:
+      initContainers:
+      - name: wait-for-grpc-server
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - until nc -z grpc-server-service.rpc.svc.cluster.local 50051; do echo waiting for grpc server; sleep 2; done;
+      containers:
+      - name: fastapi-client
+        image: localhost:5000/rpc-client:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        envFrom:
+        - secretRef:
+            name: fastapi-client-secret
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 300m
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-client-service
+  namespace: rpc
+  labels:
+    app: fastapi-client
+    component: frontend
+spec:
+  selector:
+    app: fastapi-client
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  type: LoadBalancer

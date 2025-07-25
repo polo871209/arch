@@ -8,6 +8,7 @@
 - Start services: `just` or `just start` (default - both Go server and Python client with PostgreSQL)
 - Individual servers: `just server` (Go foreground), `just client` (Python foreground)
 - Test: `just test` (basic health check), specific tests: `cd client && uv run pytest path/to/test.py::test_name`
+- Cache: `just cache-flush` (clear cache), `just cache-stats` (view cache info)
 - Build: `just build` (Go server binary)
 - Format: `just fmt` (Go fmt, black, isort)
 - Lint: `just lint` (Go vet, flake8)

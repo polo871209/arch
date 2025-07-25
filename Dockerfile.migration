@@ -1,0 +1,20 @@
+# Use the minimal base image with Go support
+FROM cgr.dev/chainguard/wolfi-base:latest
+
+# Install Go and required tools
+RUN apk add --no-cache go git curl
+
+# Set up Go environment
+ENV GOPATH=/go
+ENV PATH="${GOPATH}/bin:${PATH}"
+
+# Install goose
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+
+# Set working directory
+WORKDIR /migrations
+
+# Copy migration files into the container
+COPY internal/database/migrations/ ./
+
+CMD ["goose", "postgres", "${DATABASE_URL}", "up"]

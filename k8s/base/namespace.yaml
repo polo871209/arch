@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rpc
+  labels:
+    app: rpc
+    environment: development

@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  namespace: rpc
+  labels:
+    app: migration
+    component: database
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: migration
+        component: database
+    spec:
+      restartPolicy: Never
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:17
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for PostgreSQL to be ready..."
+          until pg_isready -h postgres-service.rpc.svc.cluster.local -p 5432 -U rpc_user; do
+            echo "PostgreSQL is unavailable - sleeping"
+            sleep 2
+          done
+          echo "PostgreSQL is ready"
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 50m
+          limits:
+            memory: 64Mi
+            cpu: 100m
+      containers:
+      - name: migration
+        image: localhost:5000/rpc-migration:v2
+        command:
+        - goose
+        - postgres
+        - $(DATABASE_URL)
+        - up
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: DATABASE_URL
+        resources:
+          requests:
+            memory: 64Mi
+            cpu: 50m
+          limits:
+            memory: 128Mi
+            cpu: 100m
