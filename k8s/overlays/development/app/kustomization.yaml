@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../../base/app/
+labels:
+- includeSelectors: true
+  includeTemplates: true
+  pairs:
+    environment: development
+images:
+- name: rpc-client
+  newName: localhost:5000/rpc-client
+  newTag: "20250726161402"
+- name: rpc-migration
+  newName: localhost:5000/rpc-migration
+  newTag: "20250726161401"
+- name: rpc-server
+  newName: localhost:5000/rpc-server
+  newTag: "20250726161358"

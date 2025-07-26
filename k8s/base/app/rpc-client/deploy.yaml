@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-client
+spec:
+  template:
+    metadata:
+    spec:
+      initContainers:
+        - name: wait-for-rpc-server
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - until nc -z rpc-server-service 50051; do echo waiting for rpc server; sleep 2; done;
+      containers:
+        - name: rpc-client
+          image: rpc-client
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - secretRef:
+                name: rpc-client-secret
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 300m
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-server
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:17
+          command:
+            - sh
+            - -c
+            - until pg_isready -h postgres-service -p 5432 -U rpc_user; do echo waiting for postgres; sleep 2; done;
+      containers:
+        - name: rpc-server
+          image: rpc-server
+          ports:
+            - containerPort: 50051
+              name: grpc
+          envFrom:
+            - secretRef:
+                name: rpc-server-secret
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          livenessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3

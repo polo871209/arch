@@ -1,22 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: argocd
 
 resources:
-  - namespace.yaml
-  - postgres.yaml
-  - valkey.yaml
-  - migration.yaml
-  - grpc-server.yaml
-  - fastapi-client.yaml
-
-commonLabels:
-  project: rpc
-  environment: development
-
-images:
-  - name: localhost:5000/rpc-server:latest
-    newTag: latest
-  - name: localhost:5000/rpc-client:latest
-    newTag: latest
-  - name: localhost:5000/rpc-migration:latest
-    newTag: latest
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v2.7.2/manifests/install.yaml
