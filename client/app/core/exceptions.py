@@ -5,29 +5,32 @@ from fastapi import HTTPException
 
 class GRPCClientError(Exception):
     """Base exception for gRPC client errors."""
+
     pass
 
 
 class GRPCServiceUnavailableError(GRPCClientError):
     """Raised when gRPC service is unavailable."""
+
     pass
 
 
 class GRPCTimeoutError(GRPCClientError):
     """Raised when gRPC request times out."""
+
     pass
 
 
 def grpc_to_http_exception(grpc_error: Exception) -> HTTPException:
     """Convert gRPC errors to HTTP exceptions."""
     import grpc
-    
+
     if not isinstance(grpc_error, grpc.RpcError):
         return HTTPException(status_code=500, detail="Internal server error")
-    
+
     status_code = grpc_error.code()
     detail = grpc_error.details()
-    
+
     match status_code:
         case grpc.StatusCode.NOT_FOUND:
             return HTTPException(status_code=404, detail=detail)

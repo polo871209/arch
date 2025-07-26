@@ -13,7 +13,7 @@ images:
   newTag: "20250726161402"
 - name: rpc-migration
   newName: localhost:5000/rpc-migration
-  newTag: "20250726161401"
+  newTag: "20250726185410"
 - name: rpc-server
   newName: localhost:5000/rpc-server
-  newTag: "20250726161358"
+  newTag: "20250726185405"

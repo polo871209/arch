@@ -7,29 +7,18 @@ from pathlib import Path
 import grpc
 
 # Add the client directory to Python path for proto imports
-client_dir = Path(__file__).parent.parent.parent  
+client_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(client_dir))
 
-# Import protobuf classes  
-from proto import (  # noqa: E402
-    CreateUserRequest,
-    DeleteUserRequest,
-    GetUserRequest,
-    ListUsersRequest,
-    UpdateUserRequest,
-    User,
-)
+# Import protobuf classes
+from proto import (CreateUserRequest, DeleteUserRequest,  # noqa: E402
+                   GetUserRequest, ListUsersRequest, UpdateUserRequest, User)
 
 # Local imports
 from ..core.exceptions import grpc_to_http_exception  # noqa: E402
 from ..grpc_client import UserGRPCClient  # noqa: E402
-from ..models import (  # noqa: E402
-    MessageResponse,
-    UserCreate,
-    UserListResponse,
-    UserResponse,
-    UserUpdate,
-)
+from ..models import (MessageResponse, UserCreate,  # noqa: E402
+                      UserListResponse, UserResponse, UserUpdate)
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +30,7 @@ class UserService:
         """Initialize service with gRPC client."""
         self.grpc_client = grpc_client
 
-    async def create_user(self, user_data: UserCreate) -> UserResponse:
+    def create_user(self, user_data: UserCreate) -> UserResponse:
         """Create a new user."""
         try:
             request = CreateUserRequest(
@@ -55,7 +44,7 @@ class UserService:
             logger.error(f"gRPC error creating user: {e}")
             raise grpc_to_http_exception(e)
 
-    async def get_user(self, user_id: str) -> UserResponse:
+    def get_user(self, user_id: str) -> UserResponse:
         """Get user by ID."""
         try:
             request = GetUserRequest(id=user_id)
@@ -65,7 +54,7 @@ class UserService:
             logger.error(f"gRPC error getting user {user_id}: {e}")
             raise grpc_to_http_exception(e)
 
-    async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
+    def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
         """Update an existing user."""
         try:
             request = UpdateUserRequest(
@@ -80,7 +69,7 @@ class UserService:
             logger.error(f"gRPC error updating user {user_id}: {e}")
             raise grpc_to_http_exception(e)
 
-    async def delete_user(self, user_id: str) -> MessageResponse:
+    def delete_user(self, user_id: str) -> MessageResponse:
         """Delete a user by ID."""
         try:
             request = DeleteUserRequest(id=user_id)
@@ -90,7 +79,7 @@ class UserService:
             logger.error(f"gRPC error deleting user {user_id}: {e}")
             raise grpc_to_http_exception(e)
 
-    async def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
+    def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
         """List users with pagination."""
         try:
             request = ListUsersRequest(page=page, limit=limit)
@@ -116,4 +105,3 @@ class UserService:
             created_at=grpc_user.created_at,
             updated_at=grpc_user.updated_at,
         )
-

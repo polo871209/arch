@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -17,6 +18,7 @@ import (
 	"grpc-server/internal/database"
 	"grpc-server/internal/repository/postgres"
 	"grpc-server/internal/server"
+	"grpc-server/internal/telemetry"
 	pb "grpc-server/pkg/pb"
 )
 
@@ -42,6 +44,20 @@ func main() {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
+	// Initialize telemetry
+	tracerProvider, err := telemetry.InitTracer(ctx, &cfg.Telemetry)
+	if err != nil {
+		slog.Error("Failed to initialize telemetry", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if tracerProvider != nil {
+			if shutdownErr := telemetry.Shutdown(ctx, tracerProvider); shutdownErr != nil {
+				slog.Error("Failed to shutdown telemetry", "error", shutdownErr)
+			}
+		}
+	}()
+
 	// Create listener
 	address := fmt.Sprintf(":%s", cfg.Server.Port)
 	listener, err := net.Listen("tcp", address)
@@ -50,10 +66,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create gRPC server with configuration
+	// Create gRPC server with configuration and tracing
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(cfg.Server.MaxRecvMsgSize),
 		grpc.MaxSendMsgSize(cfg.Server.MaxSendMsgSize),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
 	// Connect to PostgreSQL database

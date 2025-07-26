@@ -28,40 +28,14 @@ start:
 infra:
     kustomize build {{overlay}}/infra | kubectl apply -f -
 
-# Install all dependencies
 install:
-    @echo "📦 Installing dependencies..."
     go mod tidy
     cd client && uv sync
-    @echo "✅ Dependencies installed"
 
-# Generate protobuf files
 proto:
-    @echo "🔧 Generating protobuf files..."
-    ./scripts/generate_proto.sh
-    @echo "✅ Protobuf files generated"
+    protoc -Iproto --go_out=pkg/pb --go_opt=paths=source_relative --go-grpc_out=pkg/pb --go-grpc_opt=paths=source_relative proto/user.proto
+    cd client && uv run python -m grpc_tools.protoc -I../proto --python_out=proto --grpc_python_out=proto ../proto/user.proto
 
-# Generate SQL code using sqlc
 sqlc:
-    @echo "🗄️ Generating SQL code..."
     sqlc generate
-    @echo "✅ SQL code generated"
-
-# Database migration up
-db-up:
-    @echo "⬆️ Running database migrations..."
-    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" up
-    @echo "✅ Migrations applied"
-
-# Database migration down
-db-down:
-    @echo "⬇️ Rolling back database migrations..."
-    goose -dir internal/database/migrations postgres "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable" down
-    @echo "✅ Migrations rolled back"
-
-# Create a new migration
-db-migrate name:
-    @echo "📝 Creating migration: {{name}}"
-    goose -dir internal/database/migrations create {{name}} sql
-    @echo "✅ Migration created"
 

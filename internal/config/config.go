@@ -7,10 +7,11 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Server   ServerConfig
-	Logger   LoggerConfig
-	Database DatabaseConfig
-	Cache    CacheConfig
+	Server    ServerConfig
+	Logger    LoggerConfig
+	Database  DatabaseConfig
+	Cache     CacheConfig
+	Telemetry TelemetryConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -45,9 +46,18 @@ type CacheConfig struct {
 	ConnMaxLifetime int // seconds
 }
 
+// TelemetryConfig holds telemetry configuration
+type TelemetryConfig struct {
+	Enabled      bool
+	ServiceName  string
+	OTLPEndpoint string
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
-	return &Config{
+	slog.Debug("Loading application configuration")
+
+	config := &Config{
 		Server: ServerConfig{
 			Port:             getEnv("SERVER_PORT", "50051"),
 			MaxRecvMsgSize:   getEnvInt("MAX_RECV_MSG_SIZE", 4*1024*1024), // 4MB
@@ -72,7 +82,22 @@ func Load() *Config {
 			ConnMaxIdleTime: getEnvInt("CACHE_MAX_IDLE_TIME", 300), // 5 minutes
 			ConnMaxLifetime: getEnvInt("CACHE_MAX_LIFETIME", 3600), // 1 hour
 		},
+		Telemetry: TelemetryConfig{
+			Enabled:      getEnv("TELEMETRY_ENABLED", "true") == "true",
+			ServiceName:  getEnv("TELEMETRY_SERVICE_NAME", "grpc-server"),
+			OTLPEndpoint: getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"),
+		},
 	}
+
+	slog.Info("Configuration loaded successfully",
+		"server_port", config.Server.Port,
+		"log_level", config.Logger.Level.String(),
+		"log_format", config.Logger.Format,
+		"telemetry_enabled", config.Telemetry.Enabled,
+		"service_name", config.Telemetry.ServiceName,
+	)
+
+	return config
 }
 
 func getEnv(key, defaultValue string) string {
