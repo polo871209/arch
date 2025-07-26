@@ -6,19 +6,27 @@ from pathlib import Path
 
 import grpc
 
-# Add the client directory to Python path for proto imports
+from ..core.exceptions import grpc_to_http_exception
+from ..grpc_client import UserGRPCClient
+from ..models import (
+    MessageResponse,
+    UserCreate,
+    UserListResponse,
+    UserResponse,
+    UserUpdate,
+)
+
 client_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(client_dir))
 
-# Import protobuf classes
-from proto import (CreateUserRequest, DeleteUserRequest,  # noqa: E402
-                   GetUserRequest, ListUsersRequest, UpdateUserRequest, User)
-
-# Local imports
-from ..core.exceptions import grpc_to_http_exception  # noqa: E402
-from ..grpc_client import UserGRPCClient  # noqa: E402
-from ..models import (MessageResponse, UserCreate,  # noqa: E402
-                      UserListResponse, UserResponse, UserUpdate)
+from proto.user_pb2 import (  # noqa: E402
+    CreateUserRequest,
+    DeleteUserRequest,
+    GetUserRequest,
+    ListUsersRequest,
+    UpdateUserRequest,
+    User,
+)
 
 logger = logging.getLogger(__name__)
 

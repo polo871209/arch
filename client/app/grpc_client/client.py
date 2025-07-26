@@ -1,5 +1,3 @@
-"""gRPC client for User service."""
-
 import logging
 import sys
 from pathlib import Path
@@ -7,19 +5,16 @@ from typing import Optional
 
 import grpc
 
-# Add the client directory to Python path for proto imports
-client_dir = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(client_dir))
-
-# Import protobuf stub
-from proto import UserServiceStub  # noqa: E402
-
-# Local imports
-from ..core.config import settings  # noqa: E402
-from ..core.exceptions import (  # noqa: E402
+from ..core.config import settings
+from ..core.exceptions import (
     GRPCClientError,
     GRPCServiceUnavailableError,
 )
+
+client_dir = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(client_dir))
+
+from proto.user_pb2_grpc import UserServiceStub  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
