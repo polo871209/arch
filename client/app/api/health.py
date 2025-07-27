@@ -1,9 +1,6 @@
-"""Health check endpoints."""
-
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from ..core.config import settings
-from ..grpc_client import UserGRPCClient
 from ..models import HealthResponse
 
 router = APIRouter(tags=["health"])
@@ -15,12 +12,9 @@ router = APIRouter(tags=["health"])
     summary="Health check",
     description="Check the health status of the API service",
 )
-async def health_check() -> HealthResponse:
-    user_grpc_client = UserGRPCClient()
-    grpc_user_status = "unhealthy"
-
-    if user_grpc_client.health_check():
-        grpc_user_status = "healthy"
+async def health_check(request: Request) -> HealthResponse:
+    grpc_client = request.app.state.grpc_client
+    grpc_user_status = "healthy" if await grpc_client.health_check() else "unhealthy"
 
     return HealthResponse(
         status="healthy",

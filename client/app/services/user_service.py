@@ -7,7 +7,7 @@ from pathlib import Path
 import grpc
 
 from ..core.exceptions import grpc_to_http_exception
-from ..grpc_client import UserGRPCClient
+from ..grpc_client import AsyncUserGRPCClient
 from ..models import (
     MessageResponse,
     UserCreate,
@@ -32,32 +32,32 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
-    def __init__(self, grpc_client: UserGRPCClient) -> None:
+    def __init__(self, grpc_client: AsyncUserGRPCClient) -> None:
         self.grpc_client = grpc_client
 
-    def create_user(self, user_data: UserCreate) -> UserResponse:
+    async def create_user(self, user_data: UserCreate) -> UserResponse:
         try:
             request = CreateUserRequest(
                 name=user_data.name,
                 email=user_data.email,
                 age=user_data.age,
             )
-            response = self.grpc_client.stub.CreateUser(request)
+            response = await self.grpc_client.stub.CreateUser(request)
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error creating user: {e}")
             raise grpc_to_http_exception(e)
 
-    def get_user(self, user_id: str) -> UserResponse:
+    async def get_user(self, user_id: str) -> UserResponse:
         try:
             request = GetUserRequest(id=user_id)
-            response = self.grpc_client.stub.GetUser(request)
+            response = await self.grpc_client.stub.GetUser(request)
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error getting user {user_id}: {e}")
             raise grpc_to_http_exception(e)
 
-    def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
+    async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
         try:
             request = UpdateUserRequest(
                 id=user_id,
@@ -65,25 +65,25 @@ class UserService:
                 email=user_data.email or "",
                 age=user_data.age or 0,
             )
-            response = self.grpc_client.stub.UpdateUser(request)
+            response = await self.grpc_client.stub.UpdateUser(request)
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error updating user {user_id}: {e}")
             raise grpc_to_http_exception(e)
 
-    def delete_user(self, user_id: str) -> MessageResponse:
+    async def delete_user(self, user_id: str) -> MessageResponse:
         try:
             request = DeleteUserRequest(id=user_id)
-            response = self.grpc_client.stub.DeleteUser(request)
+            response = await self.grpc_client.stub.DeleteUser(request)
             return MessageResponse(message=response.message)
         except grpc.RpcError as e:
             logger.error(f"gRPC error deleting user {user_id}: {e}")
             raise grpc_to_http_exception(e)
 
-    def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
+    async def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
         try:
             request = ListUsersRequest(page=page, limit=limit)
-            response = self.grpc_client.stub.ListUsers(request)
+            response = await self.grpc_client.stub.ListUsers(request)
 
             users = [self._grpc_user_to_pydantic(user) for user in response.users]
             return UserListResponse(

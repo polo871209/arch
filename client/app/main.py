@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from .api import health_router, users_router
 from .core.config import settings
+from .grpc_client.client import AsyncUserGRPCClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +16,20 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    yield  # Add startup/shutdown logic if needed
+    # Startup
+    logger.info("Starting up FastAPI app...")
+    grpc_client = AsyncUserGRPCClient()
+    await grpc_client.connect()
+    app.state.grpc_client = grpc_client
+    logger.info("gRPC client connected.")
+
+    try:
+        yield
+    finally:
+        # Shutdown
+        logger.info("Shutting down FastAPI app...")
+        await grpc_client.close()
+        logger.info("gRPC client connection closed.")
 
 
 def create_app() -> FastAPI:

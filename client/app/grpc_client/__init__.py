@@ -1,3 +1,3 @@
-from .client import UserGRPCClient
+from .client import AsyncUserGRPCClient
 
-__all__ = ["UserGRPCClient"]
+__all__ = ["AsyncUserGRPCClient"]
