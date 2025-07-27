@@ -1,5 +1,3 @@
-"""Custom exception classes for the application."""
-
 from fastapi import HTTPException
 
 

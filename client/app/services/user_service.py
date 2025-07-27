@@ -32,14 +32,10 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
-    """Service class for user business logic and gRPC communication."""
-
     def __init__(self, grpc_client: UserGRPCClient) -> None:
-        """Initialize service with gRPC client."""
         self.grpc_client = grpc_client
 
     def create_user(self, user_data: UserCreate) -> UserResponse:
-        """Create a new user."""
         try:
             request = CreateUserRequest(
                 name=user_data.name,
@@ -53,7 +49,6 @@ class UserService:
             raise grpc_to_http_exception(e)
 
     def get_user(self, user_id: str) -> UserResponse:
-        """Get user by ID."""
         try:
             request = GetUserRequest(id=user_id)
             response = self.grpc_client.stub.GetUser(request)
@@ -63,7 +58,6 @@ class UserService:
             raise grpc_to_http_exception(e)
 
     def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
-        """Update an existing user."""
         try:
             request = UpdateUserRequest(
                 id=user_id,
@@ -78,7 +72,6 @@ class UserService:
             raise grpc_to_http_exception(e)
 
     def delete_user(self, user_id: str) -> MessageResponse:
-        """Delete a user by ID."""
         try:
             request = DeleteUserRequest(id=user_id)
             response = self.grpc_client.stub.DeleteUser(request)
@@ -88,7 +81,6 @@ class UserService:
             raise grpc_to_http_exception(e)
 
     def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
-        """List users with pagination."""
         try:
             request = ListUsersRequest(page=page, limit=limit)
             response = self.grpc_client.stub.ListUsers(request)
@@ -104,7 +96,6 @@ class UserService:
             raise grpc_to_http_exception(e)
 
     def _grpc_user_to_pydantic(self, grpc_user: User) -> UserResponse:
-        """Convert gRPC User message to Pydantic UserResponse."""
         return UserResponse(
             id=grpc_user.id,
             name=grpc_user.name,

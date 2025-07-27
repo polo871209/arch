@@ -5,8 +5,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from ...grpc_client import UserGRPCClient
-from ...models import (MessageResponse, UserCreate, UserListResponse,
-                       UserResponse, UserUpdate)
+from ...models import (
+    MessageResponse,
+    UserCreate,
+    UserListResponse,
+    UserResponse,
+    UserUpdate,
+)
 from ...services import UserService
 
 router = APIRouter(tags=["users"])

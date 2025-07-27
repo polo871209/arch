@@ -1,11 +1,7 @@
-"""Core application configuration and utilities."""
-
 import os
 
 
 class Settings:
-    """Application settings with environment variable support."""
-
     def __init__(self) -> None:
         # Server settings
         self.grpc_host: str = os.getenv("GRPC_HOST", "localhost")
@@ -30,5 +26,4 @@ class Settings:
         return f"{self.grpc_host}:{self.grpc_port}"
 
 
-# Global settings instance
 settings = Settings()

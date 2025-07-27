@@ -20,12 +20,9 @@ logger = logging.getLogger(__name__)
 
 
 class UserGRPCClient:
-    """gRPC client for User service with connection management."""
-
-    def __init__(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
-        """Initialize gRPC client with optional host/port override."""
-        self._host = host or settings.grpc_host
-        self._port = port or settings.grpc_port
+    def __init__(self) -> None:
+        self._host = settings.grpc_host
+        self._port = settings.grpc_port
         self._address = f"{self._host}:{self._port}"
         self._channel: Optional[grpc.Channel] = None
         self._stub: Optional[UserServiceStub] = None
@@ -40,17 +37,15 @@ class UserGRPCClient:
         self.close()
 
     def connect(self) -> None:
-        """Establish connection to gRPC server."""
         try:
             self._channel = grpc.insecure_channel(self._address)
             self._stub = UserServiceStub(self._channel)
-            logger.info(f"Connected to gRPC server at {self._address}")
+            logger.debug(f"Connected to gRPC server at {self._address}")
         except Exception as e:
             logger.error(f"Failed to connect to gRPC server at {self._address}: {e}")
             raise GRPCServiceUnavailableError(f"Failed to connect to gRPC server: {e}")
 
     def close(self) -> None:
-        """Close gRPC connection."""
         if self._channel:
             self._channel.close()
             self._channel = None
