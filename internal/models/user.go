@@ -6,7 +6,6 @@ import (
 	pb "grpc-server/pkg/pb"
 )
 
-// User represents the domain model for a user
 type User struct {
 	ID        string
 	Name      string
@@ -16,7 +15,6 @@ type User struct {
 	UpdatedAt time.Time
 }
 
-// ToProto converts domain model to protobuf message
 func (u *User) ToProto() *pb.User {
 	return &pb.User{
 		Id:        u.ID,
@@ -28,7 +26,6 @@ func (u *User) ToProto() *pb.User {
 	}
 }
 
-// FromProto creates domain model from protobuf message
 func FromProto(pbUser *pb.User) *User {
 	return &User{
 		ID:        pbUser.Id,
@@ -40,7 +37,6 @@ func FromProto(pbUser *pb.User) *User {
 	}
 }
 
-// NewUser creates a new user with timestamps
 func NewUser(id, name, email string, age int32) *User {
 	now := time.Now()
 	return &User{
@@ -53,7 +49,6 @@ func NewUser(id, name, email string, age int32) *User {
 	}
 }
 
-// Update updates user fields and timestamp
 func (u *User) Update(name, email string, age int32) {
 	if name != "" {
 		u.Name = name

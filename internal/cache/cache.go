@@ -6,13 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
+
+	"grpc-server/internal/config"
 
 	"github.com/valkey-io/valkey-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"grpc-server/internal/config"
 )
 
 // Common cache errors
@@ -20,7 +22,6 @@ var (
 	ErrCacheMiss = errors.New("cache miss")
 )
 
-// Cache defines the interface for cache operations
 type Cache interface {
 	Get(ctx context.Context, key string) ([]byte, error)
 	Set(ctx context.Context, key string, value any, expiration time.Duration) error
@@ -35,19 +36,11 @@ type ValkeyCache struct {
 	tracer trace.Tracer
 }
 
-// NewValkeyCache creates a new Valkey cache instance
 func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache, error) {
-	// Parse the URL to extract the host:port
-	// For now, simple parsing - expecting format: valkey://host:port
-	url := cfg.URL
-	if url == "" {
-		url = "valkey://localhost:6380"
-	}
-
-	// Extract host:port from valkey://host:port
-	address := "localhost:6380" // default
-	if len(url) > 9 && url[:9] == "valkey://" {
-		address = url[9:] // Extract everything after "valkey://"
+	const prefix = "valkey://"
+	address, ok := strings.CutPrefix(cfg.URL, prefix)
+	if !ok || address == "" {
+		return nil, errors.New("invalid cache URL: must start with valkey:// and include host:port")
 	}
 
 	logger.Info("Creating Valkey client", "address", address)
@@ -66,7 +59,6 @@ func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache,
 	}, nil
 }
 
-// Get retrieves a value from cache
 func (c *ValkeyCache) Get(ctx context.Context, key string) ([]byte, error) {
 	c.logger.Debug("Attempting cache get", "key", key)
 
@@ -104,7 +96,6 @@ func (c *ValkeyCache) Get(ctx context.Context, key string) ([]byte, error) {
 	return data, nil
 }
 
-// Set stores a value in cache with expiration
 func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
 	c.logger.Debug("Attempting cache set", "key", key, "expiration", expiration)
 
@@ -135,14 +126,12 @@ func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration
 
 	span.SetAttributes(attribute.Int("cache.value_size", len(data)))
 
-	var cmd valkey.Completed
-	if expiration > 0 {
-		cmd = c.client.B().Set().Key(key).Value(string(data)).ExSeconds(int64(expiration.Seconds())).Build()
-	} else {
-		cmd = c.client.B().Set().Key(key).Value(string(data)).Build()
+	if expiration <= 0 {
+		expiration = time.Hour
+		c.logger.Warn("No expiration provided, using default", "key", key, "default_expiration", expiration)
 	}
 
-	result := c.client.Do(ctx, cmd)
+	result := c.client.Do(ctx, c.client.B().Set().Key(key).Value(string(data)).ExSeconds(int64(expiration.Seconds())).Build())
 	if err := result.Error(); err != nil {
 		c.logger.Error("Cache set operation failed", "key", key, "error", err, "value_size", len(data))
 		span.RecordError(err)
@@ -153,7 +142,6 @@ func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration
 	return nil
 }
 
-// Delete removes a value from cache
 func (c *ValkeyCache) Delete(ctx context.Context, key string) error {
 	c.logger.Debug("Attempting cache delete", "key", key)
 
@@ -184,9 +172,7 @@ func (c *ValkeyCache) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-// Close closes the cache connection
 func (c *ValkeyCache) Close() error {
-	c.logger.Info("Closing Valkey cache connection")
 	c.client.Close()
 	c.logger.Info("Valkey cache connection closed")
 	return nil

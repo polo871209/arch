@@ -13,7 +13,6 @@ var (
 	ErrEmailExists  = errors.New("email already exists")
 )
 
-// UserRepository defines the interface for user data operations
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id string) (*models.User, error)

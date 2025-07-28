@@ -3,9 +3,9 @@ package config
 import (
 	"log/slog"
 	"os"
+	"strconv"
 )
 
-// Config holds application configuration
 type Config struct {
 	Server    ServerConfig
 	Logger    LoggerConfig
@@ -14,7 +14,6 @@ type Config struct {
 	Telemetry TelemetryConfig
 }
 
-// ServerConfig holds server-specific configuration
 type ServerConfig struct {
 	Port             string
 	MaxRecvMsgSize   int
@@ -22,13 +21,11 @@ type ServerConfig struct {
 	EnableReflection bool
 }
 
-// LoggerConfig holds logging configuration
 type LoggerConfig struct {
 	Level  slog.Level
 	Format string // "json" or "text"
 }
 
-// DatabaseConfig holds database configuration
 type DatabaseConfig struct {
 	URL         string
 	MaxConns    int
@@ -37,7 +34,6 @@ type DatabaseConfig struct {
 	MaxLifetime int // seconds
 }
 
-// CacheConfig holds cache configuration
 type CacheConfig struct {
 	URL             string
 	MaxConns        int
@@ -46,14 +42,12 @@ type CacheConfig struct {
 	ConnMaxLifetime int // seconds
 }
 
-// TelemetryConfig holds telemetry configuration
 type TelemetryConfig struct {
 	Enabled      bool
 	ServiceName  string
 	OTLPEndpoint string
 }
 
-// Load loads configuration from environment variables with defaults
 func Load() *Config {
 	slog.Debug("Loading application configuration")
 
@@ -108,14 +102,17 @@ func getEnv(key, defaultValue string) string {
 }
 
 func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		// Simple int parsing - in production, you'd want proper error handling
-		if len(value) > 0 {
-			// For simplicity, returning default on any parsing issues
-			return defaultValue
-		}
+	envVarStr, found := os.LookupEnv(key)
+	if !found || envVarStr == "" {
+		return defaultValue
 	}
-	return defaultValue
+
+	val, err := strconv.Atoi(envVarStr)
+	if err != nil {
+		slog.Error("Invalid integer value for environment variable", "key", key, "value", envVarStr, "error", err)
+		return defaultValue
+	}
+	return val
 }
 
 func getLogLevel(key string, defaultLevel slog.Level) slog.Level {

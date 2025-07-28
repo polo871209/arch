@@ -14,11 +14,9 @@ import (
 	"grpc-server/internal/cache"
 	"grpc-server/internal/models"
 	"grpc-server/internal/repository"
-	"grpc-server/internal/validation"
 	pb "grpc-server/pkg/pb"
 )
 
-// CachedUserServer implements the UserService with caching
 type CachedUserServer struct {
 	pb.UnimplementedUserServiceServer
 	repo   repository.UserRepository
@@ -26,7 +24,6 @@ type CachedUserServer struct {
 	logger *slog.Logger
 }
 
-// NewCachedUserServer creates a new CachedUserServer instance
 func NewCachedUserServer(repo repository.UserRepository, cache cache.Cache, logger *slog.Logger) *CachedUserServer {
 	return &CachedUserServer{
 		repo:   repo,
@@ -49,21 +46,11 @@ func (s *CachedUserServer) userListCacheKey(offset, limit int) string {
 	return fmt.Sprintf("%s%d:%d", userListCachePrefix, offset, limit)
 }
 
-// CreateUser creates a new user and invalidates related cache
 func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	s.logger.Info("CreateUser request received", "name", req.Name, "email", req.Email, "age", req.Age)
 
-	// Validate input
-	if err := validation.ValidateCreateUser(req.Name, req.Email, req.Age); err != nil {
-		s.logger.Warn("CreateUser validation failed", "error", err, "email", req.Email)
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
-	}
-
-	// Create domain model
 	user := models.NewUser(uuid.New().String(), req.Name, req.Email, req.Age)
 	s.logger.Debug("Created domain user model", "user_id", user.ID, "email", user.Email)
 
-	// Store user
 	if err := s.repo.Create(ctx, user); err != nil {
 		if err == repository.ErrEmailExists {
 			s.logger.Warn("CreateUser email already exists", "email", req.Email)
@@ -73,7 +60,6 @@ func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserReq
 		return nil, status.Errorf(codes.Internal, "failed to create user")
 	}
 
-	// Cache the new user
 	if err := s.cacheUser(ctx, user); err != nil {
 		s.logger.Warn("Failed to cache new user", "id", user.ID, "error", err)
 	}
@@ -81,22 +67,14 @@ func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserReq
 	// Invalidate list cache
 	s.invalidateListCache(ctx)
 
-	s.logger.Info("User created successfully", "id", user.ID, "email", user.Email)
-
 	return &pb.CreateUserResponse{
 		User:    user.ToProto(),
 		Message: "User created successfully",
 	}, nil
 }
 
-// GetUser retrieves a user by ID with caching
 func (s *CachedUserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	s.logger.Debug("GetUser request received", "user_id", req.Id)
-
-	if err := validation.ValidateUserID(req.Id); err != nil {
-		s.logger.Warn("GetUser validation failed", "error", err, "user_id", req.Id)
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
-	}
 
 	// Try cache first
 	cacheKey := s.userCacheKey(req.Id)
@@ -140,14 +118,8 @@ func (s *CachedUserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) 
 	}, nil
 }
 
-// UpdateUser updates an existing user and invalidates cache
 func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-	s.logger.Info("UpdateUser request received", "user_id", req.Id, "name", req.Name, "email", req.Email, "age", req.Age)
-
-	if err := validation.ValidateUpdateUser(req.Id, req.Name, req.Email, req.Age); err != nil {
-		s.logger.Warn("UpdateUser validation failed", "error", err, "user_id", req.Id)
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
-	}
+	s.logger.Debug("UpdateUser request received", "user_id", req.Id, "name", req.Name, "email", req.Email, "age", req.Age)
 
 	// Get existing user from database (not cache) to ensure consistency
 	s.logger.Debug("Fetching existing user from database", "user_id", req.Id)
@@ -202,14 +174,8 @@ func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserReq
 	}, nil
 }
 
-// DeleteUser deletes a user by ID and invalidates cache
 func (s *CachedUserServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
-	s.logger.Info("DeleteUser request received", "user_id", req.Id)
-
-	if err := validation.ValidateUserID(req.Id); err != nil {
-		s.logger.Warn("DeleteUser validation failed", "error", err, "user_id", req.Id)
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
-	}
+	s.logger.Debug("DeleteUser request received", "user_id", req.Id)
 
 	if err := s.repo.Delete(ctx, req.Id); err != nil {
 		if err == repository.ErrUserNotFound {
@@ -237,7 +203,6 @@ func (s *CachedUserServer) DeleteUser(ctx context.Context, req *pb.DeleteUserReq
 	}, nil
 }
 
-// ListUsers returns a paginated list of users with caching
 func (s *CachedUserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
 	s.logger.Debug("ListUsers request received", "page", req.Page, "limit", req.Limit)
 
@@ -295,8 +260,6 @@ func (s *CachedUserServer) ListUsers(ctx context.Context, req *pb.ListUsersReque
 	s.logger.Debug("User list retrieved successfully", "total_count", total, "returned_count", len(users), "page", page)
 	return response, nil
 }
-
-// Helper methods
 
 func (s *CachedUserServer) cacheUser(ctx context.Context, user *models.User) error {
 	s.logger.Debug("Caching user", "user_id", user.ID, "email", user.Email)
