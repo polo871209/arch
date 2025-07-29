@@ -9,17 +9,21 @@ image-client := "rpc-client"
 
 overlay := "k8s/overlays/development"
 
-build-push image dockerfile context:
+build-push image dockerfile context kustomize_subpath:
     @set -euo pipefail
-    @docker build -t {{registry}}/{{image}}:{{timestamp}} -f {{dockerfile}} {{context}}
-    @docker push {{registry}}/{{image}}:{{timestamp}}
-    @cd {{overlay}}/app && kustomize edit set image {{image}}={{registry}}/{{image}}:{{timestamp}}
+    docker build -t {{registry}}/{{image}}:{{timestamp}} -f {{dockerfile}} {{context}}
+    docker push {{registry}}/{{image}}:{{timestamp}}
+    cd {{overlay}}/{{kustomize_subpath}} && kustomize edit set image {{image}}={{registry}}/{{image}}:{{timestamp}}
 
 [parallel]
 build:
-    @just build-push {{image-server}} Dockerfile .
-    @just build-push {{image-migration}} Dockerfile.migration .
-    @just build-push {{image-client}} ./client/Dockerfile ./client
+    @just build-push {{image-server}} Dockerfile . app
+    @just build-push {{image-client}} ./client/Dockerfile ./client app
+
+migration:
+    @just build-push {{image-migration}} Dockerfile.migration . app/migration
+    cd {{overlay}}/app/migration && kustomize edit set namesuffix -- -{{timestamp}} 
+    @kustomize build {{overlay}}/app/migration | kubectl apply -f -
 
 start:
     @just build
