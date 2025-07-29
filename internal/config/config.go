@@ -63,7 +63,7 @@ func Load() *Config {
 			Format: getEnv("LOG_FORMAT", "json"),
 		},
 		Database: DatabaseConfig{
-			URL:         getEnv("DATABASE_URL", "postgres://rpc_user:rpc_password@localhost:5433/rpc_dev?sslmode=disable"),
+			URL:         getEnv("DATABASE_URL", ""),
 			MaxConns:    getEnvInt("DB_MAX_CONNS", 25),
 			MinConns:    getEnvInt("DB_MIN_CONNS", 5),
 			MaxIdleTime: getEnvInt("DB_MAX_IDLE_TIME", 300), // 5 minutes

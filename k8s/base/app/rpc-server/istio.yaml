@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: rpc-server
+spec:
+  host: rpc-server
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: rpc-server
+spec:
+  hosts:
+    - rpc-server
+  tcp:
+    - match:
+        - port: 50051
+      route:
+        - destination:
+            host: rpc-server
+            port:
+              number: 50051

@@ -40,3 +40,8 @@ proto:
 sqlc:
     @sqlc generate
 
+[working-directory: 'k8s/istio']
+istio-update:
+    @helm upgrade istio-base istio/base -n istio-system -f base.yaml
+    @helm upgrade istiod istio/istiod -n istio-system -f istiod.yaml
+    @helm upgrade istio-ingress istio/gateway -n istio-ingress -f gateway.yaml

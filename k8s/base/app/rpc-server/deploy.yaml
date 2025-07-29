@@ -11,7 +11,13 @@ spec:
           command:
             - sh
             - -c
-            - until pg_isready -h postgres-service -p 5432 -U rpc_user; do echo waiting for postgres; sleep 2; done;
+            - until pg_isready -h $(HOST) -p 5432 -U rpc_user; do echo waiting for postgres; sleep 2; done;
+          env:
+            - name: HOST
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: HOST
       containers:
         - name: rpc-server
           image: rpc-server
@@ -20,7 +26,13 @@ spec:
               name: grpc
           envFrom:
             - secretRef:
-                name: rpc-server-secret
+                name: rpc-server
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: DATABASE_URL
           resources:
             limits:
               memory: 512Mi

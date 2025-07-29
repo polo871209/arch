@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rpc
+  labels:
+    name: rpc
+    monitoring: prometheus
+    istio-injection: enabled

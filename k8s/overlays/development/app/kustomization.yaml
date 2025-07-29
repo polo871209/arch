@@ -10,10 +10,10 @@ labels:
 images:
 - name: rpc-client
   newName: localhost:5000/rpc-client
-  newTag: "20250728171125"
+  newTag: "20250729163054"
 - name: rpc-migration
   newName: localhost:5000/rpc-migration
-  newTag: "20250728171124"
+  newTag: "20250729163053"
 - name: rpc-server
   newName: localhost:5000/rpc-server
-  newTag: "20250728171101"
+  newTag: "20250729163052"

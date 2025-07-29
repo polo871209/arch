@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: rpc
 
 resources:
+  - namespace.yaml
   - postgres.yaml
   - valkey.yaml
 
@@ -11,4 +12,3 @@ labels:
       project: rpc
     includeSelectors: true
     includeTemplates: true
-

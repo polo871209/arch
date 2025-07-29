@@ -10,6 +10,3 @@ labels:
     pairs:
       environment: development
       tier: dev
-
-patches:
-  - path: secret-patches.yaml
