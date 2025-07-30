@@ -13,19 +13,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: valkey
-  labels:
-    app: valkey
-    component: cache
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: valkey
   template:
-    metadata:
-      labels:
-        app: valkey
-        component: cache
     spec:
       containers:
         - name: valkey
@@ -68,9 +57,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: valkey
-  labels:
-    app: valkey
-    component: cache
+  namespace: rpc
 spec:
   selector:
     app: valkey

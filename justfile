@@ -30,7 +30,7 @@ start:
     @kustomize build {{overlay}}/app | kubectl apply -f -
 
 infra:
-    @kustomize build {{overlay}}/infra | kubectl apply -f -
+    @kustomize build {{overlay}}/infra | kubectl apply -f - | grep -v 'unchanged'
 
 install:
     @go mod tidy
@@ -48,4 +48,5 @@ sqlc:
 istio-update:
     @helm upgrade istio-base istio/base -n istio-system -f base.yaml
     @helm upgrade istiod istio/istiod -n istio-system -f istiod.yaml
+    @helm upgrade kiali-operator kiali/kiali-operator -n kiali-operator -f kiali-operator.yaml 
     @helm upgrade istio-ingress istio/gateway -n istio-ingress -f gateway.yaml

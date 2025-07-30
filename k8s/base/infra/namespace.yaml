@@ -6,3 +6,47 @@ metadata:
     name: rpc
     monitoring: prometheus
     istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kiala-operator
+  labels:
+    name: kiala-operator
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    name: istio-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-ingress
+  labels:
+    name: istio-ingress
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    name: argocd
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+  labels:
+    name: postgres
+    monitoring: prometheus
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cnpg-system
+  labels:
+    name: cnpg-system
