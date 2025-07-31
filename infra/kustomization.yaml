@@ -3,6 +3,9 @@ kind: Kustomization
 resources:
   - argocd
   - cloudnative-pg
+  - grafana
   - istio
+  - kiali
+  - prometheus
   - valkey/app.yaml
   - namespace.yaml

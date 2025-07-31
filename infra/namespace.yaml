@@ -1,18 +1,3 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: rpc
-  labels:
-    name: rpc
-    monitoring: prometheus
-    istio-injection: enabled
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kiala-operator
-  labels:
-    name: kiala-operator
 ---
 apiVersion: v1
 kind: Namespace
@@ -38,15 +23,38 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: postgres
+  name: cnpg-system
   labels:
-    name: postgres
+    name: cnpg-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    name: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kiali-operator
+  labels:
+    name: kiali-operator
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rpc
+  labels:
+    name: rpc
     monitoring: prometheus
     istio-injection: enabled
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: cnpg-system
+  name: postgres
   labels:
-    name: cnpg-system
+    name: postgres
+    monitoring: prometheus
+    istio-injection: enabled
