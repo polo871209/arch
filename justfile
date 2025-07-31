@@ -7,7 +7,7 @@ image-server := "rpc-server"
 image-migration := "rpc-migration"
 image-client := "rpc-client"
 
-overlay := "k8s/overlays/development"
+overlay := "kustomize/overlays/dev"
 
 build-push image dockerfile context kustomize_subpath:
     @set -euo pipefail
@@ -29,8 +29,9 @@ start:
     @just build
     @kustomize build {{overlay}}/app | kubectl apply -f -
 
+[working-directory: 'infra']
 infra:
-    @kustomize build {{overlay}}/infra | kubectl apply -f - | grep -v 'unchanged'
+    @kustomize build . | kubectl apply -f - | grep -v 'unchanged'
 
 install:
     @go mod tidy

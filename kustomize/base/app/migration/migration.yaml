@@ -15,7 +15,7 @@ spec:
             - -c
             - |
               echo "Waiting for PostgreSQL to be ready..."
-              until pg_isready -h postgres -p 5432 -U rpc_user; do
+              until pg_isready -h $(DATABASE_HOST) -p 5432 -U $(DATABASE_USER); do
                 echo "PostgreSQL is unavailable - sleeping"
                 sleep 2
               done
@@ -24,8 +24,18 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres
-                  key: POSTGRES_PASSWORD
+                  name: rpc-server
+                  key: DATABASE_PASSWORD
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rpc-server
+                  key: DATABASE_USER
+            - name: DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: rpc-server
+                  key: DATABASE_HOST
           resources:
             requests:
               memory: 32Mi
@@ -45,7 +55,7 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: postgres
+                  name: rpc-server
                   key: DATABASE_URL
           resources:
             requests:

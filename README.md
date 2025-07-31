@@ -1,43 +1,40 @@
-# gRPC Service
+# Monorepo: Python Client & Go Server
 
-Modern gRPC service with **Go 1.24 server** and **Python 3.13 FastAPI client** using best practice project structure.
+This repository contains a Python FastAPI client and a Go gRPC server, with supporting infrastructure for local development and deployment.
 
-## 🚀 Quick Start
+## Build & Development Commands
 
-### Local Development
+- **Build all services:** `just build`
+- **Run DB migration:** `just migration`
+- **Start full stack (dev):** `just start`
+- **Python install deps:** `cd client && uv sync`
+- **Python lint:** `cd client && uv run black . && uv run isort . && uv run flake8 .`
+- **Python type check:** `cd client && uv run pyright`
+- **Go build:** `go build ./cmd/server`
 
-```bash
-just install    # Install deps & generate proto
-just start      # Start both services
-```
+## Code Style Guidelines
 
-### Kubernetes Deployment
+- **Python:**
+  - Use `black` and `isort` for formatting.
+  - Type annotations for all public functions/classes.
+  - Use Pydantic models for API schemas.
+  - Use `async`/`await` for FastAPI endpoints and gRPC calls.
+  - Use snake_case for functions/variables, PascalCase for classes.
+- **Go:**
+  - Use struct types for config, models, and repositories.
+  - Return errors explicitly; wrap with context where helpful.
+  - Use slog for logging.
+  - Use PascalCase for exported names, camelCase for locals.
+- **General:**
+  - Follow existing patterns in each language and directory.
+  - Keep code idiomatic and well-documented.
 
-```bash
-cd k8s
-./deploy.sh deploy  # Deploy to OrbStack Kubernetes
-```
+## Project Structure
 
-**Service URLs:**
+- `client/` — Python FastAPI client
+- `cmd/server/` — Go gRPC server
+- `internal/` — Go internal packages
+- `proto/` — Protobuf definitions and generated code
+- `infra/`, `kustomize/` — Kubernetes, ArgoCD, Istio, and Postgres manifests
 
-- **Local**: `localhost:50051` (gRPC), `http://localhost:8000` (REST)
-- **Kubernetes**: `http://<EXTERNAL-IP>:8000` (get IP: `kubectl get svc fastapi-client-service`)
-- **API Docs**: `/docs` endpoint
-
-### Common Commands
-
-```bash
-# Local Development
-just start      # Start both services (in-memory)
-just start-db   # Start both services (PostgreSQL)
-just stop       # Stop all services
-just logs       # View logs
-just test       # Test API endpoints
-
-# Kubernetes
-cd k8s && ./deploy.sh check   # Check prerequisites
-cd k8s && ./deploy.sh deploy  # Full deployment
-cd k8s && ./deploy.sh status  # Show status
-cd k8s && ./deploy.sh clean   # Clean up
-```
-
+For more, see [AGENTS.md](./AGENTS.md).

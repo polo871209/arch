@@ -1,18 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: postgres
+  name: rpc-valkey
+  namespace: argocd
 spec:
   project: platform
   source:
-    repoURL: https://github.com/polo871209/rpc.git
+    repoURL: https://github.com/polo871209/rpc
     targetRevision: main
-    path: k8s/base/infra/postgres
-    directory:
-      recurse: true
+    path: infra/valkey
   destination:
     server: https://kubernetes.default.svc
-    namespace: postgres
+    namespace: rpc
   syncPolicy:
     automated:
       prune: true
