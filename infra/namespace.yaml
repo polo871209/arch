@@ -37,6 +37,20 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: elastic-system
+  labels:
+    name: elastic-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elastic-stack
+  labels:
+    name: elastic-stack
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: kiali-operator
   labels:
     name: kiali-operator

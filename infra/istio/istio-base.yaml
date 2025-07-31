@@ -1,22 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kiali-operator
+  name: istio-base
 spec:
   project: platform
   sources:
-    - repoURL: https://kiali.org/helm-charts
-      chart: kiali-operator
-      targetRevision: 2.13.0
+    - repoURL: https://istio-release.storage.googleapis.com/charts
+      chart: base
+      targetRevision: 1.26.3
       helm:
         valueFiles:
-          - $values/infra/kiali/kiali-operator-values.yaml
+          - $values/infra/istio/istio-base-values.yaml
     - repoURL: "https://github.com/polo871209/rpc.git"
       targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: kiali-operator
+    namespace: istio-system
   syncPolicy:
     automated:
       prune: true

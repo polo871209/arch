@@ -5,14 +5,16 @@ metadata:
   namespace: argocd
 spec:
   project: platform
-  source:
-    repoURL: https://cloudnative-pg.io/charts/
-    chart: cloudnative-pg
-    targetRevision: 0.25.0
-    helm:
-      values: |
-        config:
-          clusterWide: true
+  sources:
+    - repoURL: https://cloudnative-pg.io/charts/
+      chart: cloudnative-pg
+      targetRevision: 0.25.0
+      helm:
+        valueFiles:
+          - $values/infra/eck/cloudnative-pg/cloudnative-pg-values.yaml
+    - repoURL: "https://github.com/polo871209/rpc.git"
+      targetRevision: main
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system

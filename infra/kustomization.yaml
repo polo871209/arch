@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - argocd
   - cloudnative-pg
+  - eck
   - grafana
   - istio
   - kiali

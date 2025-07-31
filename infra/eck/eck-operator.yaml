@@ -1,23 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kiali-operator
+  name: eck-operator
+  namespace: argocd
 spec:
   project: platform
   sources:
-    - repoURL: https://kiali.org/helm-charts
-      chart: kiali-operator
-      targetRevision: 2.13.0
+    - repoURL: https://helm.elastic.co
+      chart: eck-operator
+      targetRevision: 3.1.0
       helm:
         valueFiles:
-          - $values/infra/kiali/kiali-operator-values.yaml
+          - $values/infra/eck/eck-operator-values.yaml
     - repoURL: "https://github.com/polo871209/rpc.git"
       targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: kiali-operator
+    namespace: elastic-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
