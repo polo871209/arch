@@ -4,7 +4,7 @@
 
 ### Current stats
 
-<img width="841" height="374" alt="image" src="https://github.com/user-attachments/assets/beba1c9c-9620-47cd-9946-361e137f99a6" />
+<img width="1270" height="629" alt="image" src="https://github.com/user-attachments/assets/6d5878cb-f22c-4960-8935-3a06249227b9" />
 
 ### Architecture & SRE Best Practices
 - [ ] Design and document system architecture diagrams (service mesh, data flow, dependencies)

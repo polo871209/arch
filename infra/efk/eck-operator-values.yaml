@@ -45,7 +45,11 @@ resources:
     memory: 150Mi
 
 # statefulsetAnnotations define the annotations that should be added to the operator StatefulSet.
-statefulsetAnnotations: {}
+statefulsetAnnotations:
+  {
+    traffic.sidecar.istio.io/excludeInboundPorts: "9443",
+    traffic.sidecar.istio.io/includeInboundPorts: "*",
+  }
 
 # statefulsetLabels define additional labels that should be added to the operator StatefulSet.
 statefulsetLabels: {}
@@ -249,7 +253,8 @@ config:
   disableConfigWatch: false
 
   # exposedNodeLabels is an array of regular expressions of node labels which are allowed to be copied as annotations on Elasticsearch Pods.
-  exposedNodeLabels: [ "topology.kubernetes.io/.*", "failure-domain.beta.kubernetes.io/.*" ]
+  exposedNodeLabels:
+    ["topology.kubernetes.io/.*", "failure-domain.beta.kubernetes.io/.*"]
 
   # ipFamily specifies the IP family to use. Possible values: IPv4, IPv6 and "" (auto-detect)
   ipFamily: ""
@@ -285,7 +290,6 @@ config:
 # Prometheus PodMonitor configuration
 # Reference: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#podmonitor
 podMonitor:
-
   # enabled determines whether a podMonitor should deployed to scrape the eck metrics.
   # This requires the prometheus operator and the config.metrics.port not to be 0
   enabled: false
@@ -370,4 +374,3 @@ global:
   createOperatorNamespace: true
   # kubeVersion is the effective Kubernetes version we target when generating the all-in-one.yaml.
   kubeVersion: 1.21.0
-

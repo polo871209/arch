@@ -9,13 +9,6 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: istio-ingress
-  labels:
-    name: istio-ingress
----
-apiVersion: v1
-kind: Namespace
-metadata:
   name: argocd
   labels:
     name: argocd
@@ -40,6 +33,7 @@ metadata:
   name: elastic-system
   labels:
     name: elastic-system
+    istio-injection: enabled
 ---
 apiVersion: v1
 kind: Namespace

@@ -1,27 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: eck-stack
+  name: eck-operator
   namespace: argocd
 spec:
   project: platform
   sources:
     - repoURL: https://helm.elastic.co
-      chart: eck-stack
-      targetRevision: 0.16.0
+      chart: eck-operator
+      targetRevision: 3.1.0
       helm:
         valueFiles:
-          - $values/infra/eck/eck-stack-values.yaml
+          - $values/infra/efk/eck-operator-values.yaml
     - repoURL: "https://github.com/polo871209/rpc.git"
       targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: elastic-stack
+    namespace: elastic-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true

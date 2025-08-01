@@ -1,0 +1,6 @@
+eck-kibana:
+  enabled: true
+  spec:
+    count: 1
+    elasticsearchRef:
+      name: elasticsearch
