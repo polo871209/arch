@@ -38,12 +38,10 @@ func parseUUID(id string) (pgtype.UUID, error) {
 		return pgtype.UUID{}, err
 	}
 
-	var pgUUID pgtype.UUID
-	err = pgUUID.Scan(userUUID)
-	if err != nil {
-		return pgtype.UUID{}, err
-	}
-	return pgUUID, nil
+	return pgtype.UUID{
+		Bytes: userUUID,
+		Valid: true,
+	}, nil
 }
 
 func (r *UserRepository) toDomainUser(dbUser database.User) *models.User {
