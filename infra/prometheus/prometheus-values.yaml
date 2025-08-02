@@ -1309,22 +1309,41 @@ serverFiles:
 # adds additional scrape configs to prometheus.yml
 # must be a string so you have to add a | after extraScrapeConfigs:
 # example adds prometheus-blackbox-exporter scrape config
-extraScrapeConfigs:
-  ""
-  # - job_name: 'prometheus-blackbox-exporter'
-  #   metrics_path: /probe
-  #   params:
-  #     module: [http_2xx]
-  #   static_configs:
-  #     - targets:
-  #       - https://example.com
-  #   relabel_configs:
-  #     - source_labels: [__address__]
-  #       target_label: __param_target
-  #     - source_labels: [__param_target]
-  #       target_label: instance
-  #     - target_label: __address__
-  #       replacement: prometheus-blackbox-exporter:9115
+extraScrapeConfigs: |
+  # Fluent Bit metrics scraping
+  - job_name: 'fluentbit'
+    static_configs:
+      - targets:
+        - 'fluent-bit.observability.svc.cluster.local:2020'
+    metrics_path: /api/v1/metrics/prometheus
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # PostgreSQL metrics via postgres-exporter (if available)
+  - job_name: 'postgres'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - postgres
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_cnpg_io_cluster]
+        action: keep
+        regex: postgres
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: (.+)
+        replacement: ${__meta_kubernetes_pod_ip}:${1}
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+    scrape_interval: 30s
+    scrape_timeout: 10s
 
 # Adds option to add alert_relabel_configs to avoid duplicate alerts in alertmanager
 # useful in H/A prometheus with different external labels but the same alerts

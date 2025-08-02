@@ -107,10 +107,10 @@ service:
   labels: {}
   # nodePort: 30020
   # clusterIP: 172.16.10.1
-  annotations: {}
-  #   prometheus.io/path: "/api/v1/metrics/prometheus"
-  #   prometheus.io/port: "2020"
-  #   prometheus.io/scrape: "true"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/api/v1/metrics/prometheus"
+    prometheus.io/port: "2020"
   externalIPs: []
   # externalIPs:
   #  - 2.2.2.2

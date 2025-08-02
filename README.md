@@ -79,6 +79,7 @@
 - [x] Set up Prometheus for metrics scraping
 - [x] Configure Grafana dashboards for application and infrastructure
 - [x] Add basic tracing (e.g., OpenTelemetry, Jaeger, or Zipkin)
+- [x] Configure Prometheus to scrape Fluent Bit and PostgreSQL metrics
 - [ ] Set up Grafana dashboards for SLOs, latency, error rates, and resource usage
 - [ ] Configure alerting rules for SRE golden signals (latency, traffic, errors, saturation)
 - [ ] Correlate logs, metrics, and traces for root cause analysis
@@ -92,17 +93,19 @@
 - [ ] Document observability architecture and data flows
 - [ ] Evaluate and implement anomaly detection for proactive incident response
 
-### ELK Stack (Elasticsearch, Logstash, Kibana)
-- [ ] Deploy Elasticsearch cluster in Kubernetes (with Helm or operator)
-- [ ] Set up Logstash for log ingestion, transformation, and shipping
-- [ ] Configure Filebeat/Fluentd/Vector as log shippers from application pods
-- [ ] Index application, infrastructure, and audit logs in Elasticsearch
+### EFK Stack (Elasticsearch, Fluent Bit, Kibana)
+- [x] Deploy Elasticsearch cluster in Kubernetes using ECK operator
+- [x] Set up Fluent Bit for log collection and shipping from pods
+- [x] Configure Fluent Bit to parse and forward Kubernetes logs to Elasticsearch
+- [x] Index application, infrastructure, and audit logs in Elasticsearch (`kubernetes-*` indices)
+- [x] Set up Kibana for log visualization and search
+- [x] Secure EFK stack with TLS and authentication (elastic user)
+- [x] Configure Fluent Bit metrics endpoint for Prometheus scraping
 - [ ] Design log retention, rollover, and archiving policies
-- [ ] Secure ELK stack with TLS, RBAC, and authentication (e.g., OIDC)
-- [ ] Create Kibana dashboards for application and infrastructure logs
+- [ ] Create custom Kibana dashboards for application-specific logs
 - [ ] Set up alerting in Kibana for error rates, anomalies, and critical events
-- [ ] Integrate ELK with Prometheus/Grafana for unified observability
-- [ ] Automate log pipeline deployment and scaling
+- [x] Integrate EFK with Prometheus/Grafana for unified observability
+- [x] Automate log pipeline deployment via ArgoCD and Kustomize
 
 ### Message Queue & Worker System
 - [ ] Evaluate and select a message queue technology (e.g., RabbitMQ, NATS, Kafka, Redis Streams)
