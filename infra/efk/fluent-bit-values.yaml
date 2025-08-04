@@ -396,39 +396,51 @@ config:
     [INPUT]
         Name tail
         Path /var/log/containers/*.log
-        multiline.parser docker, cri
+        multiline.parser cri
         Tag kube.*
         Mem_Buf_Limit 5MB
         Skip_Long_Lines On
-
-    [INPUT]
-        Name systemd
-        Tag host.*
-        Systemd_Filter _SYSTEMD_UNIT=kubelet.service
-        Read_From_Tail On
 
   ## https://docs.fluentbit.io/manual/pipeline/filters
   filters: |
     [FILTER]
         Name kubernetes
-        Match kube.*
+        Match *
         Merge_Log On
-        Keep_Log Off
+        Keep_Log On
         K8S-Logging.Parser On
-        K8S-Logging.Exclude On
         Buffer_Size 1M
-        
+        Labels Off
+        Annotations Off
+
     [FILTER]
         Name record_modifier
-        Match kube.*
-        Record cluster_name dev-cluster
-        Record environment development
+        Match *
+        Remove_key kubernetes.host
+        Remove_key kubernetes.docker_id
+        Remove_key kubernetes.pod_id
+        
+    [FILTER]
+        Name parser
+        Match kube.var.log.containers.*rpc-client*
+        Key_Name log
+        Parser fastapi_log
+        Reserve_Data On
+        Preserve_Key On
+
+    [FILTER]
+        Name parser
+        Match kube.var.log.containers.*rpc-server*
+        Key_Name log
+        Parser go_json_log
+        Reserve_Data On
+        Preserve_Key On
 
   ## https://docs.fluentbit.io/manual/pipeline/outputs
   outputs: |
     [OUTPUT]
         Name es
-        Match kube.*
+        Match *
         Host elasticsearch-es-http.elastic-stack.svc.cluster.local
         Port 9200
         HTTP_User elastic
@@ -436,29 +448,11 @@ config:
         tls On
         tls.verify Off
         Logstash_Format On
-        Logstash_Prefix kubernetes
+        Logstash_Prefix logs
         Retry_Limit False
         Suppress_Type_Name On
         Replace_Dots On
         Time_Key @timestamp
-        Generate_ID On
-
-    [OUTPUT]
-        Name es
-        Match host.*
-        Host elasticsearch-es-http.elastic-stack.svc.cluster.local
-        Port 9200
-        HTTP_User elastic
-        HTTP_Passwd 8H23b2zVX8KEBJYg1W359L7G
-        tls On
-        tls.verify Off
-        Logstash_Format On
-        Logstash_Prefix node
-        Retry_Limit False
-        Suppress_Type_Name On
-        Replace_Dots On
-        Time_Key @timestamp
-        Generate_ID On
 
   ## https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/upstream-servers
   ## This configuration is deprecated, please use `extraFiles` instead.
@@ -467,9 +461,15 @@ config:
   ## https://docs.fluentbit.io/manual/pipeline/parsers
   customParsers: |
     [PARSER]
-        Name docker_no_time
+        Name fastapi_log
+        Format regex
+        Regex ^(?<level>\w+):\s+(?<client_ip>[\d\.]+):(?<client_port>\d+) - "(?<method>\w+) (?<path>[^\s]+) (?<protocol>[^"]+)" (?<status_code>\d+) (?<status_text>.*)$
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+    [PARSER]
+        Name go_json_log
         Format json
-        Time_Keep Off
         Time_Key time
         Time_Format %Y-%m-%dT%H:%M:%S.%L
 

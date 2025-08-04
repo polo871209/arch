@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   name: rpc-client
 spec:
-  replicas: 2
   template:
     metadata:
     spec:
