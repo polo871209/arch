@@ -1,4 +1,5 @@
 import logging
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -9,8 +10,30 @@ from .api import health_router, users_router
 from .core.config import settings
 from .grpc_client.client import AsyncUserGRPCClient
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+
+# Unified logging configuration
+def setup_logging():
+    """Configure unified logging for FastAPI, uvicorn, and app"""
+
+    # Create formatter with consistent format
+    formatter = logging.Formatter(
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # Create console handler
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+
+    # Configure root logger - this will be inherited by all other loggers
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, settings.log_level.upper()))
+    root_logger.handlers.clear()  # Remove any existing handlers
+    root_logger.addHandler(handler)
+
+
+# Setup logging
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -66,10 +89,12 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
+    # Run uvicorn with unified logging
     uvicorn.run(
         "app.main:app",
         host=settings.api_host,
         port=settings.api_port,
         reload=settings.api_reload,
-        log_level=settings.log_level.lower(),
+        log_config=None,  # Disable uvicorn's default logging config
+        use_colors=False,  # Use our consistent formatter
     )

@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	database "grpc-server/internal/database/generated"
+	"grpc-server/internal/logging"
 	"grpc-server/internal/models"
 	"grpc-server/internal/repository"
 )
@@ -93,17 +94,17 @@ func (r *UserRepository) fromDomainUser(user *models.User) (database.CreateUserP
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
-	slog.Debug("Creating user", "user_id", user.ID, "email", user.Email)
+	slog.Debug("Creating user", logging.UserID, user.ID, logging.UserEmail, user.Email)
 
 	params, err := r.fromDomainUser(user)
 	if err != nil {
-		slog.Error("Failed to convert domain user to database params", "error", err, "user_id", user.ID)
+		slog.Error("Failed to convert domain user to database params", logging.Error, err, logging.UserID, user.ID)
 		return err
 	}
 
 	dbUser, err := r.queries.CreateUser(ctx, params)
 	if err != nil {
-		slog.Error("Failed to create user in database", "error", err, "user_id", user.ID, "email", user.Email)
+		slog.Error("Failed to create user in database", logging.Error, err, logging.UserID, user.ID, logging.UserEmail, user.Email)
 		if err.Error() == `ERROR: duplicate key value violates unique constraint "users_email_key" (SQLSTATE 23505)` {
 			return repository.ErrEmailExists
 		}
@@ -112,47 +113,47 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 
 	*user = *r.toDomainUser(dbUser)
 
-	slog.Info("User created successfully", "user_id", user.ID, "email", user.Email, "created_at", user.CreatedAt)
+	slog.Info("User created successfully", logging.UserID, user.ID, logging.UserEmail, user.Email, "created_at", user.CreatedAt)
 	return nil
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
-	slog.Debug("Getting user by ID", "user_id", id)
+	slog.Debug("Getting user by ID", logging.UserID, id)
 
 	pgUUID, err := parseUUID(id)
 	if err != nil {
-		slog.Error("Invalid user ID format", "error", err, "user_id", id)
+		slog.Error("Invalid user ID format", logging.Error, err, logging.UserID, id)
 		return nil, repository.ErrUserNotFound
 	}
 
 	dbUser, err := r.queries.GetUserByID(ctx, pgUUID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			slog.Debug("User not found", "user_id", id)
+			slog.Debug("User not found", logging.UserID, id)
 			return nil, repository.ErrUserNotFound
 		}
-		slog.Error("Failed to get user from database", "error", err, "user_id", id)
+		slog.Error("Failed to get user from database", logging.Error, err, logging.UserID, id)
 		return nil, err
 	}
 
 	user := r.toDomainUser(dbUser)
 
-	slog.Debug("User retrieved successfully", "user_id", user.ID, "email", user.Email)
+	slog.Debug("User retrieved successfully", logging.UserID, user.ID, logging.UserEmail, user.Email)
 	return user, nil
 }
 
 func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
-	slog.Debug("Updating user", "user_id", user.ID, "email", user.Email)
+	slog.Debug("Updating user", logging.UserID, user.ID, logging.UserEmail, user.Email)
 
 	pgUUID, err := parseUUID(user.ID)
 	if err != nil {
-		slog.Error("Invalid user ID format", "error", err, "user_id", user.ID)
+		slog.Error("Invalid user ID format", logging.Error, err, logging.UserID, user.ID)
 		return repository.ErrUserNotFound
 	}
 
 	var updatedAt pgtype.Timestamptz
 	if err := updatedAt.Scan(time.Now()); err != nil {
-		slog.Error("Failed to scan timestamp", "error", err, "user_id", user.ID)
+		slog.Error("Failed to scan timestamp", logging.Error, err, logging.UserID, user.ID)
 		return err
 	}
 
@@ -167,38 +168,38 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 	dbUser, err := r.queries.UpdateUser(ctx, params)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			slog.Debug("User not found for update", "user_id", user.ID)
+			slog.Debug("User not found for update", logging.UserID, user.ID)
 			return repository.ErrUserNotFound
 		}
 		if err.Error() == `ERROR: duplicate key value violates unique constraint "users_email_key" (SQLSTATE 23505)` {
-			slog.Error("Email already exists", "email", user.Email, "user_id", user.ID)
+			slog.Error("Email already exists", logging.UserEmail, user.Email, logging.UserID, user.ID)
 			return repository.ErrEmailExists
 		}
-		slog.Error("Failed to update user in database", "error", err, "user_id", user.ID)
+		slog.Error("Failed to update user in database", logging.Error, err, logging.UserID, user.ID)
 		return err
 	}
 
 	*user = *r.toDomainUser(dbUser)
 
-	slog.Info("User updated successfully", "user_id", user.ID, "email", user.Email, "updated_at", user.UpdatedAt)
+	slog.Info("User updated successfully", logging.UserID, user.ID, logging.UserEmail, user.Email, "updated_at", user.UpdatedAt)
 	return nil
 }
 
 func (r *UserRepository) Delete(ctx context.Context, id string) error {
-	slog.Debug("Deleting user", "user_id", id)
+	slog.Debug("Deleting user", logging.UserID, id)
 
 	pgUUID, err := parseUUID(id)
 	if err != nil {
-		slog.Error("Invalid user ID format", "error", err, "user_id", id)
+		slog.Error("Invalid user ID format", logging.Error, err, logging.UserID, id)
 		return repository.ErrUserNotFound
 	}
 
 	if err := r.queries.DeleteUser(ctx, pgUUID); err != nil {
-		slog.Error("Failed to delete user from database", "error", err, "user_id", id)
+		slog.Error("Failed to delete user from database", logging.Error, err, logging.UserID, id)
 		return repository.ErrUserNotFound
 	}
 
-	slog.Info("User deleted successfully", "user_id", id)
+	slog.Info("User deleted successfully", logging.UserID, id)
 	return nil
 }
 
@@ -207,14 +208,14 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int) ([]*models
 
 	totalCount, err := r.queries.CountUsers(ctx)
 	if err != nil {
-		slog.Error("Failed to count users", "error", err)
+		slog.Error("Failed to count users", logging.Error, err)
 		return nil, 0, err
 	}
 
 	params := database.ListUsersParams{Limit: int32(limit), Offset: int32(offset)}
 	dbUsers, err := r.queries.ListUsers(ctx, params)
 	if err != nil {
-		slog.Error("Failed to list users from database", "error", err, "offset", offset, "limit", limit)
+		slog.Error("Failed to list users from database", logging.Error, err, "offset", offset, "limit", limit)
 		return nil, 0, err
 	}
 
@@ -229,21 +230,21 @@ func (r *UserRepository) List(ctx context.Context, offset, limit int) ([]*models
 }
 
 func (r *UserRepository) EmailExists(ctx context.Context, email string, excludeID string) (bool, error) {
-	slog.Debug("Checking email existence", "email", email, "exclude_id", excludeID)
+	slog.Debug("Checking email existence", logging.UserEmail, email, "exclude_id", excludeID)
 
 	pgUUID, err := parseUUID(excludeID)
 	if err != nil {
-		slog.Error("Invalid exclude ID format", "error", err, "exclude_id", excludeID)
+		slog.Error("Invalid exclude ID format", logging.Error, err, "exclude_id", excludeID)
 		return false, err
 	}
 
 	params := database.CheckEmailExistsParams{Email: email, ID: pgUUID}
 	exists, err := r.queries.CheckEmailExists(ctx, params)
 	if err != nil {
-		slog.Error("Failed to check email existence", "error", err, "email", email, "exclude_id", excludeID)
+		slog.Error("Failed to check email existence", logging.Error, err, logging.UserEmail, email, "exclude_id", excludeID)
 		return false, err
 	}
 
-	slog.Debug("Email existence check completed", "email", email, "exclude_id", excludeID, "exists", exists)
+	slog.Debug("Email existence check completed", logging.UserEmail, email, "exclude_id", excludeID, "exists", exists)
 	return exists, nil
 }
