@@ -1,54 +1,3 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: istio-system
-  labels:
-    name: istio-system
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: argocd
-  labels:
-    name: argocd
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cnpg-system
-  labels:
-    name: cnpg-system
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: observability
-  labels:
-    name: observability
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: elastic-system
-  labels:
-    name: elastic-system
-    istio-injection: enabled
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: elastic-stack
-  labels:
-    name: elastic-stack
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kiali-operator
-  labels:
-    name: kiali-operator
----
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -66,3 +15,82 @@ metadata:
     name: postgres
     monitoring: prometheus
     istio-injection: enabled
+
+# Infrastructure & Management Namespaces
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    name: argocd
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    name: cert-manager
+
+# Observability & Monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    name: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elastic-stack
+  labels:
+    name: elastic-stack
+
+# Service Mesh & Networking
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    name: istio-system
+
+# Operator Namespaces
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cnpg-system
+  labels:
+    name: cnpg-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elastic-system
+  labels:
+    name: elastic-system
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jaeger-operator
+  labels:
+    name: jaeger-operator
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opentelemetry-operator
+  labels:
+    name: opentelemetry-operator
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kiali-operator
+  labels:
+    name: kiali-operator

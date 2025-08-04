@@ -316,7 +316,12 @@ terminationGracePeriodSeconds:
 
 priorityClassName: ""
 
-env: []
+env:
+  - name: ELASTIC_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: elasticsearch-es-elastic-user
+        key: elastic
 #  - name: FOO
 #    value: "bar"
 
@@ -441,10 +446,10 @@ config:
     [OUTPUT]
         Name es
         Match *
-        Host elasticsearch-es-http.elastic-stack.svc.cluster.local
+        Host elasticsearch-es-http.observability.svc.cluster.local
         Port 9200
         HTTP_User elastic
-        HTTP_Passwd 8H23b2zVX8KEBJYg1W359L7G
+        HTTP_Passwd ${ELASTIC_PASSWORD}
         tls On
         tls.verify Off
         Logstash_Format On

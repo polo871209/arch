@@ -19,7 +19,7 @@ spec:
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: elastic-stack
+    namespace: observability
   syncPolicy:
     automated:
       prune: true

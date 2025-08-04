@@ -1,22 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: grafana
+  name: opentelemetry-operator
 spec:
   project: platform
   sources:
-    - repoURL: https://grafana.github.io/helm-charts
-      targetRevision: 9.3.0
-      chart: grafana
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      targetRevision: 0.92.0
+      chart: opentelemetry-operator
       helm:
         valueFiles:
-          - $values/infra/grafana/grafana-values.yaml
+          - $values/infra/opentelemetry/opentelemetry-operator-values.yaml
     - repoURL: "https://github.com/polo871209/rpc.git"
       targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: observability
+    namespace: opentelemetry-operator
   syncPolicy:
     automated:
       prune: true
