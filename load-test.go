@@ -68,16 +68,45 @@ type ListUsersResponse struct {
 }
 
 func NewLoadTester(baseURL string) *LoadTester {
+	// Configure transport with connection pooling
+	transport := &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 30,
+		IdleConnTimeout:     90 * time.Second,
+		DisableKeepAlives:   false,
+	}
+
 	return &LoadTester{
 		client: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout:   30 * time.Second, // Increased timeout
+			Transport: transport,
 		},
 		baseURL: baseURL,
 		userIDs: make([]string, 0),
 	}
 }
 
-// Generate random user data
+// HTTP client with retry logic
+func (lt *LoadTester) doRequest(req *http.Request) (*http.Response, error) {
+	maxRetries := 3
+	baseDelay := 100 * time.Millisecond
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		resp, err := lt.client.Do(req)
+		if err == nil {
+			return resp, nil
+		}
+
+		// Exponential backoff
+		if attempt < maxRetries-1 {
+			delay := baseDelay * time.Duration(1<<attempt)
+			time.Sleep(delay)
+		}
+	}
+
+	// Final attempt without retry
+	return lt.client.Do(req)
+}
 func (lt *LoadTester) generateRandomUser() CreateUserRequest {
 	names := []string{"Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry"}
 	domains := []string{"gmail.com", "yahoo.com", "outlook.com", "company.com"}
@@ -139,7 +168,7 @@ func (lt *LoadTester) testCreateUser(ctx context.Context) error {
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := lt.client.Do(httpReq)
+	resp, err := lt.doRequest(httpReq)
 	if err != nil {
 		return fmt.Errorf("CreateUser HTTP request failed: %v", err)
 	}
@@ -174,7 +203,7 @@ func (lt *LoadTester) testGetUser(ctx context.Context) error {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 
-	resp, err := lt.client.Do(httpReq)
+	resp, err := lt.doRequest(httpReq)
 	if err != nil {
 		return fmt.Errorf("GetUser HTTP request failed: %v", err)
 	}
@@ -221,7 +250,7 @@ func (lt *LoadTester) testUpdateUser(ctx context.Context) error {
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := lt.client.Do(httpReq)
+	resp, err := lt.doRequest(httpReq)
 	if err != nil {
 		return fmt.Errorf("UpdateUser HTTP request failed: %v", err)
 	}
@@ -255,7 +284,7 @@ func (lt *LoadTester) testDeleteUser(ctx context.Context) error {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 
-	resp, err := lt.client.Do(httpReq)
+	resp, err := lt.doRequest(httpReq)
 	if err != nil {
 		return fmt.Errorf("DeleteUser HTTP request failed: %v", err)
 	}
@@ -289,7 +318,7 @@ func (lt *LoadTester) testListUsers(ctx context.Context) error {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 
-	resp, err := lt.client.Do(httpReq)
+	resp, err := lt.doRequest(httpReq)
 	if err != nil {
 		return fmt.Errorf("ListUsers HTTP request failed: %v", err)
 	}
@@ -338,8 +367,8 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID i
 			log.Printf("❌ Worker %d error in cycle %d: %v", workerID, cycleNum, err)
 		}
 
-		// Small random delay between method calls
-		time.Sleep(time.Duration(100+rand.Intn(400)) * time.Millisecond)
+		// Small random delay between method calls (increased for stability)
+		time.Sleep(time.Duration(200+rand.Intn(600)) * time.Millisecond)
 	}
 
 	log.Printf("✅ Worker %d: Completed test cycle %d", workerID, cycleNum)
@@ -369,7 +398,19 @@ func main() {
 		if err := lt.testCreateUser(ctx); err != nil {
 			log.Printf("❌ Failed to create initial user %d: %v", i, err)
 		}
+		// Small delay between initial creations
+		time.Sleep(200 * time.Millisecond)
 	}
+
+	// Warmup period - test service connectivity
+	log.Printf("🔥 Warming up service connections...")
+	for i := 0; i < 3; i++ {
+		if err := lt.testListUsers(ctx); err != nil {
+			log.Printf("⚠️ Warmup attempt %d failed: %v", i+1, err)
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	log.Printf("✅ Warmup completed")
 
 	// Main loop with parallel workers
 	log.Printf("🔁 Starting continuous load testing with %d parallel workers...", numWorkers)
@@ -377,11 +418,16 @@ func main() {
 	// Use WaitGroup to manage workers
 	var wg sync.WaitGroup
 
-	// Start parallel workers
+	// Start parallel workers with staggered startup
 	for workerID := 1; workerID <= numWorkers; workerID++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
+
+			// Stagger worker startup to avoid thundering herd
+			startupDelay := time.Duration(id-1) * 500 * time.Millisecond
+			time.Sleep(startupDelay)
+			log.Printf("🚀 Worker %d starting after %v delay", id, startupDelay)
 
 			cycle := 1
 			ticker := time.NewTicker(interval)

@@ -12,9 +12,6 @@ import (
 	"grpc-server/internal/config"
 
 	"github.com/valkey-io/valkey-go"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Common cache errors
@@ -33,7 +30,6 @@ type Cache interface {
 type ValkeyCache struct {
 	client valkey.Client
 	logger *slog.Logger
-	tracer trace.Tracer
 }
 
 func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache, error) {
@@ -55,57 +51,34 @@ func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache,
 	return &ValkeyCache{
 		client: client,
 		logger: logger,
-		tracer: otel.Tracer("valkey.cache"),
 	}, nil
 }
 
 func (c *ValkeyCache) Get(ctx context.Context, key string) ([]byte, error) {
 	c.logger.Debug("Attempting cache get", "key", key)
 
-	ctx, span := c.tracer.Start(ctx, "cache.get",
-		trace.WithAttributes(
-			attribute.String("cache.key", key),
-		),
-	)
-	defer span.End()
-
 	result := c.client.Do(ctx, c.client.B().Get().Key(key).Build())
 	if err := result.Error(); err != nil {
 		if valkey.IsValkeyNil(err) {
 			c.logger.Debug("Cache miss", "key", key)
-			span.SetAttributes(attribute.Bool("cache.hit", false))
 			return nil, ErrCacheMiss
 		}
 		c.logger.Error("Cache get operation failed", "key", key, "error", err)
-		span.RecordError(err)
 		return nil, fmt.Errorf("cache get failed: %w", err)
 	}
 
 	data, err := result.AsBytes()
 	if err != nil {
 		c.logger.Error("Failed to convert cache result to bytes", "key", key, "error", err)
-		span.RecordError(err)
 		return nil, fmt.Errorf("failed to convert result: %w", err)
 	}
 
-	span.SetAttributes(
-		attribute.Bool("cache.hit", true),
-		attribute.Int("cache.value_size", len(data)),
-	)
 	c.logger.Debug("Cache hit successful", "key", key, "value_size", len(data))
 	return data, nil
 }
 
 func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
 	c.logger.Debug("Attempting cache set", "key", key, "expiration", expiration)
-
-	ctx, span := c.tracer.Start(ctx, "cache.set",
-		trace.WithAttributes(
-			attribute.String("cache.key", key),
-			attribute.String("cache.expiration", expiration.String()),
-		),
-	)
-	defer span.End()
 
 	var data []byte
 	var err error
@@ -119,12 +92,9 @@ func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration
 		data, err = json.Marshal(value)
 		if err != nil {
 			c.logger.Error("Failed to marshal value for cache", "key", key, "error", err)
-			span.RecordError(err)
 			return fmt.Errorf("failed to marshal value: %w", err)
 		}
 	}
-
-	span.SetAttributes(attribute.Int("cache.value_size", len(data)))
 
 	if expiration <= 0 {
 		expiration = time.Hour
@@ -134,7 +104,6 @@ func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration
 	result := c.client.Do(ctx, c.client.B().Set().Key(key).Value(string(data)).ExSeconds(int64(expiration.Seconds())).Build())
 	if err := result.Error(); err != nil {
 		c.logger.Error("Cache set operation failed", "key", key, "error", err, "value_size", len(data))
-		span.RecordError(err)
 		return fmt.Errorf("cache set failed: %w", err)
 	}
 
@@ -145,17 +114,9 @@ func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration
 func (c *ValkeyCache) Delete(ctx context.Context, key string) error {
 	c.logger.Debug("Attempting cache delete", "key", key)
 
-	ctx, span := c.tracer.Start(ctx, "cache.delete",
-		trace.WithAttributes(
-			attribute.String("cache.key", key),
-		),
-	)
-	defer span.End()
-
 	result := c.client.Do(ctx, c.client.B().Del().Key(key).Build())
 	if err := result.Error(); err != nil {
 		c.logger.Error("Cache delete operation failed", "key", key, "error", err)
-		span.RecordError(err)
 		return fmt.Errorf("cache delete failed: %w", err)
 	}
 
@@ -163,11 +124,9 @@ func (c *ValkeyCache) Delete(ctx context.Context, key string) error {
 	deletedCount, err := result.AsInt64()
 	if err != nil {
 		c.logger.Error("Failed to get delete result", "key", key, "error", err)
-		span.RecordError(err)
 		return fmt.Errorf("failed to get delete result: %w", err)
 	}
 
-	span.SetAttributes(attribute.Int64("cache.deleted_count", deletedCount))
 	c.logger.Debug("Cache delete completed", "key", key, "deleted_count", deletedCount)
 	return nil
 }

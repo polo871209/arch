@@ -26,17 +26,6 @@ func (u *User) ToProto() *pb.User {
 	}
 }
 
-func FromProto(pbUser *pb.User) *User {
-	return &User{
-		ID:        pbUser.Id,
-		Name:      pbUser.Name,
-		Email:     pbUser.Email,
-		Age:       pbUser.Age,
-		CreatedAt: time.Unix(pbUser.CreatedAt, 0),
-		UpdatedAt: time.Unix(pbUser.UpdatedAt, 0),
-	}
-}
-
 func NewUser(id, name, email string, age int32) *User {
 	now := time.Now()
 	return &User{

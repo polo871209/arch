@@ -47,7 +47,6 @@ func (s *CachedUserServer) userListCacheKey(offset, limit int) string {
 }
 
 func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-
 	user := models.NewUser(uuid.New().String(), req.Name, req.Email, req.Age)
 	s.logger.Debug("Created domain user model", "user_id", user.ID, "email", user.Email)
 
@@ -285,14 +284,12 @@ func (s *CachedUserServer) invalidateListCache(ctx context.Context) {
 	s.logger.Debug("Starting list cache invalidation")
 	invalidatedCount := 0
 
-	// Simple approach: delete common list cache patterns
-	// In a production system, you might use cache tags or patterns
-	for offset := 0; offset < 1000; offset += 10 {
-		for limit := 1; limit <= 100; limit += 10 {
+	// Simple approach: delete common list cache patterns (most used combinations)
+	commonLimits := []int{10, 20, 50, 100}
+	for offset := 0; offset < 100; offset += 10 { // Only check first 10 pages
+		for _, limit := range commonLimits {
 			cacheKey := s.userListCacheKey(offset, limit)
-			if err := s.cache.Delete(ctx, cacheKey); err != nil {
-				s.logger.Debug("Failed to invalidate list cache entry", "key", cacheKey, "error", err)
-			} else {
+			if err := s.cache.Delete(ctx, cacheKey); err == nil {
 				invalidatedCount++
 			}
 		}

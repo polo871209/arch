@@ -29,8 +29,8 @@ spec:
                 name: rpc-server
           resources:
             limits:
-              memory: 512Mi
-              cpu: 500m
+              memory: 1Gi
+              cpu: 1000m
           livenessProbe:
             tcpSocket:
               port: 50051
@@ -41,7 +41,7 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 50051
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 5
             successThreshold: 1

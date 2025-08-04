@@ -7,11 +7,10 @@ import (
 )
 
 type Config struct {
-	Server    ServerConfig
-	Logger    LoggerConfig
-	Database  DatabaseConfig
-	Cache     CacheConfig
-	Telemetry TelemetryConfig
+	Server   ServerConfig
+	Logger   LoggerConfig
+	Database DatabaseConfig
+	Cache    CacheConfig
 }
 
 type ServerConfig struct {
@@ -42,12 +41,6 @@ type CacheConfig struct {
 	ConnMaxLifetime int // seconds
 }
 
-type TelemetryConfig struct {
-	Enabled      bool
-	ServiceName  string
-	OTLPEndpoint string
-}
-
 func Load() *Config {
 	slog.Debug("Loading application configuration")
 
@@ -76,19 +69,12 @@ func Load() *Config {
 			ConnMaxIdleTime: getEnvInt("CACHE_MAX_IDLE_TIME", 300), // 5 minutes
 			ConnMaxLifetime: getEnvInt("CACHE_MAX_LIFETIME", 3600), // 1 hour
 		},
-		Telemetry: TelemetryConfig{
-			Enabled:      getEnv("TELEMETRY_ENABLED", "true") == "true",
-			ServiceName:  getEnv("TELEMETRY_SERVICE_NAME", "grpc-server"),
-			OTLPEndpoint: getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"),
-		},
 	}
 
 	slog.Info("Configuration loaded successfully",
 		"server_port", config.Server.Port,
 		"log_level", config.Logger.Level.String(),
 		"log_format", config.Logger.Format,
-		"telemetry_enabled", config.Telemetry.Enabled,
-		"service_name", config.Telemetry.ServiceName,
 	)
 
 	return config
