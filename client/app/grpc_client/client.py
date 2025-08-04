@@ -1,7 +1,6 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 from grpc import aio
 
@@ -24,8 +23,8 @@ class AsyncUserGRPCClient:
         self._host = settings.grpc_host
         self._port = settings.grpc_port
         self._address = f"{self._host}:{self._port}"
-        self._channel: Optional[aio.Channel] = None
-        self._stub: Optional[UserServiceStub] = None
+        self._channel: aio.Channel | None = None
+        self._stub: UserServiceStub | None = None
 
     async def __aenter__(self) -> "AsyncUserGRPCClient":
         """Async context manager entry."""
@@ -45,7 +44,9 @@ class AsyncUserGRPCClient:
             logger.debug(f"Connected to gRPC server at {self._address}")
         except Exception as e:
             logger.error(f"Failed to connect to gRPC server at {self._address}: {e}")
-            raise GRPCServiceUnavailableError(f"Failed to connect to gRPC server: {e}")
+            raise GRPCServiceUnavailableError(
+                f"Failed to connect to gRPC server: {e}"
+            ) from e
 
     async def close(self) -> None:
         if self._channel:

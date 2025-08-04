@@ -1,4 +1,13 @@
+from typing import Protocol
+
 from fastapi import HTTPException
+
+
+class GRPCError(Protocol):
+    """Protocol for gRPC errors that have code and details methods."""
+
+    def code(self) -> int: ...
+    def details(self) -> str: ...
 
 
 class GRPCClientError(Exception):
@@ -21,13 +30,21 @@ class GRPCTimeoutError(GRPCClientError):
 
 def grpc_to_http_exception(grpc_error: Exception) -> HTTPException:
     """Convert gRPC errors to HTTP exceptions."""
+    from typing import cast
+
     import grpc
 
     if not isinstance(grpc_error, grpc.RpcError):
         return HTTPException(status_code=500, detail="Internal server error")
 
-    status_code = grpc_error.code()
-    detail = grpc_error.details()
+    # Check if the error has the required methods (some RpcError subclasses don't)
+    if not (hasattr(grpc_error, "code") and hasattr(grpc_error, "details")):
+        return HTTPException(status_code=500, detail="Internal server error")
+
+    # Cast to our protocol to satisfy type checker
+    typed_error = cast(GRPCError, grpc_error)
+    status_code = typed_error.code()
+    detail = typed_error.details()
 
     match status_code:
         case grpc.StatusCode.NOT_FOUND:

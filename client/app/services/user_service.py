@@ -46,7 +46,7 @@ class UserService:
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error creating user: {e}")
-            raise grpc_to_http_exception(e)
+            raise grpc_to_http_exception(e) from e
 
     async def get_user(self, user_id: str) -> UserResponse:
         try:
@@ -55,7 +55,7 @@ class UserService:
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error getting user {user_id}: {e}")
-            raise grpc_to_http_exception(e)
+            raise grpc_to_http_exception(e) from e
 
     async def update_user(self, user_id: str, user_data: UserUpdate) -> UserResponse:
         try:
@@ -69,7 +69,7 @@ class UserService:
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error updating user {user_id}: {e}")
-            raise grpc_to_http_exception(e)
+            raise grpc_to_http_exception(e) from e
 
     async def delete_user(self, user_id: str) -> MessageResponse:
         try:
@@ -78,7 +78,7 @@ class UserService:
             return MessageResponse(message=response.message)
         except grpc.RpcError as e:
             logger.error(f"gRPC error deleting user {user_id}: {e}")
-            raise grpc_to_http_exception(e)
+            raise grpc_to_http_exception(e) from e
 
     async def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
         try:
@@ -93,7 +93,7 @@ class UserService:
             )
         except grpc.RpcError as e:
             logger.error(f"gRPC error listing users: {e}")
-            raise grpc_to_http_exception(e)
+            raise grpc_to_http_exception(e) from e
 
     def _grpc_user_to_pydantic(self, grpc_user: User) -> UserResponse:
         return UserResponse(

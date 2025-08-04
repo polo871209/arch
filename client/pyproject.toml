@@ -5,38 +5,27 @@ description = "FastAPI client for User gRPC service"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi>=0.115.6",
-    "grpcio>=1.68.1", 
-    "grpcio-tools>=1.68.1",
-    "uvicorn[standard]>=0.32.1",
-    "pydantic>=2.10.4",
-    "pydantic[email]>=2.10.4",
-    "protobuf>=5.28.3",
+    "fastapi>=0.116.1",
+    "grpcio>=1.74.0",
+    "grpcio-tools>=1.74.0",
+    "uvicorn[standard]>=0.35.0",
+    "pydantic>=2.11.6",
+    "pydantic[email]>=2.11.6",
+    "protobuf>=6.31.1",
 ]
 
-[tool.uv]
-dev-dependencies = [
-    "pytest>=8.3.4",
-    "httpx>=0.28.1",
-    "pytest-asyncio>=0.25.0",
-    "pyright>=1.1.403",
-    "flake8>=7.3.0",
-    "black>=25.1.0",
-    "isort>=6.0.1",
-]
+[tool.pyrefly]
+exclude = ["proto/", "proto/*"]
 
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.13"
-include = ["app"]
-exclude = [
-    "**/__pycache__",
-    "**/.pytest_cache", 
-    "**/node_modules",
-    ".venv",
-    "proto/user_pb2_grpc.py"
-]
-reportMissingImports = false
-reportMissingTypeStubs = false
-reportMissingModuleSource = false
+[tool.ruff]
+exclude = ["proto/", "proto/*"]
+
+[tool.ruff.lint]
+exclude = ["proto/", "proto/*"]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
