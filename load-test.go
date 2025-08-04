@@ -112,7 +112,10 @@ func (lt *LoadTester) generateRandomUser() CreateUserRequest {
 	domains := []string{"gmail.com", "yahoo.com", "outlook.com", "company.com"}
 
 	name := names[rand.Intn(len(names))]
-	email := fmt.Sprintf("%s.%d@%s", name, rand.Intn(1000), domains[rand.Intn(len(domains))])
+	// Use timestamp and random number to ensure unique emails
+	timestamp := time.Now().UnixNano()
+	randomSuffix := rand.Intn(100000)
+	email := fmt.Sprintf("%s.%d.%d@%s", name, timestamp, randomSuffix, domains[rand.Intn(len(domains))])
 	age := int32(18 + rand.Intn(50)) // Age between 18-67
 
 	return CreateUserRequest{
