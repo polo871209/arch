@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -18,15 +19,15 @@ import (
 )
 
 type UserRepository struct {
-	conn    *pgx.Conn
+	pool    *pgxpool.Pool
 	queries *database.Queries
 	tracer  trace.Tracer
 }
 
-func NewUserRepository(conn *pgx.Conn) repository.UserRepository {
+func NewUserRepository(pool *pgxpool.Pool) repository.UserRepository {
 	return &UserRepository{
-		conn:    conn,
-		queries: database.New(conn),
+		pool:    pool,
+		queries: database.New(pool),
 		tracer:  otel.Tracer("postgres.user.repository"),
 	}
 }

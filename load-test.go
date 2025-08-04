@@ -311,8 +311,8 @@ func (lt *LoadTester) testListUsers(ctx context.Context) error {
 }
 
 // Run a single test cycle hitting all endpoints
-func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int) {
-	log.Printf("🔄 Starting test cycle %d", cycleNum)
+func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID int) {
+	log.Printf("🔄 Worker %d: Starting test cycle %d", workerID, cycleNum)
 
 	// Test all methods with some randomization
 	methods := []func(context.Context) error{
@@ -335,24 +335,26 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int) {
 	// Execute methods with small delays
 	for _, method := range methods {
 		if err := method(ctx); err != nil {
-			log.Printf("❌ Error in cycle %d: %v", cycleNum, err)
+			log.Printf("❌ Worker %d error in cycle %d: %v", workerID, cycleNum, err)
 		}
 
 		// Small random delay between method calls
 		time.Sleep(time.Duration(100+rand.Intn(400)) * time.Millisecond)
 	}
 
-	log.Printf("✅ Completed test cycle %d", cycleNum)
+	log.Printf("✅ Worker %d: Completed test cycle %d", workerID, cycleNum)
 }
 
 func main() {
 	// Configuration - targeting the FastAPI client on port 8000
 	baseURL := "http://rpc-client.rpc.svc.cluster.local:8000" // FastAPI client service
 	interval := 2 * time.Second                               // Interval between test cycles
+	numWorkers := 4                                           // Number of parallel workers
 
 	log.Printf("🚀 Starting HTTP load tester")
 	log.Printf("📡 Base URL: %s", baseURL)
 	log.Printf("⏱️ Interval: %v", interval)
+	log.Printf("👥 Workers: %d", numWorkers)
 
 	// Initialize load tester
 	lt := NewLoadTester(baseURL)
@@ -369,17 +371,32 @@ func main() {
 		}
 	}
 
-	// Main loop
-	log.Printf("🔁 Starting continuous load testing...")
-	cycle := 1
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	// Main loop with parallel workers
+	log.Printf("🔁 Starting continuous load testing with %d parallel workers...", numWorkers)
 
-	for {
-		select {
-		case <-ticker.C:
-			lt.runTestCycle(ctx, cycle)
-			cycle++
-		}
+	// Use WaitGroup to manage workers
+	var wg sync.WaitGroup
+
+	// Start parallel workers
+	for workerID := 1; workerID <= numWorkers; workerID++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+
+			cycle := 1
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ticker.C:
+					lt.runTestCycle(ctx, cycle, id)
+					cycle++
+				}
+			}
+		}(workerID)
 	}
+
+	// Wait for workers (they run forever, so this will block until Ctrl+C)
+	wg.Wait()
 }

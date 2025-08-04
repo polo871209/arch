@@ -75,19 +75,19 @@ func main() {
 
 	// Connect to PostgreSQL database
 	slog.Info("Connecting to PostgreSQL database")
-	dbConn, err := database.Connect(ctx, &cfg.Database)
+	dbPool, err := database.Connect(ctx, &cfg.Database)
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
 		os.Exit(1)
 	}
 	defer func() {
-		if dbConn != nil {
-			dbConn.Close(ctx)
+		if dbPool != nil {
+			dbPool.Close()
 		}
 	}()
 
 	// Create PostgreSQL repository
-	userRepo := postgres.NewUserRepository(dbConn)
+	userRepo := postgres.NewUserRepository(dbPool)
 
 	// Connect to Valkey cache
 	slog.Info("Connecting to Valkey cache")
