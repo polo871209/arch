@@ -84,17 +84,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    # Run uvicorn with unified logging
-    uvicorn.run(
-        "app.main:app",
-        host=settings.api_host,
-        port=settings.api_port,
-        reload=settings.api_reload,
-        log_config=None,  # Disable uvicorn's default logging config
-        use_colors=False,  # Use our consistent formatter
-    )

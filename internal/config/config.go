@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -46,28 +47,28 @@ func Load() *Config {
 
 	config := &Config{
 		Server: ServerConfig{
-			Port:             getEnv("SERVER_PORT", "50051"),
-			MaxRecvMsgSize:   getEnvInt("MAX_RECV_MSG_SIZE", 4*1024*1024), // 4MB
-			MaxSendMsgSize:   getEnvInt("MAX_SEND_MSG_SIZE", 4*1024*1024), // 4MB
-			EnableReflection: true,                                        // Always enable reflection for development
+			Port:             requireEnv("GRPC_PORT"),
+			MaxRecvMsgSize:   requireEnvInt("MAX_RECV_MSG_SIZE"),
+			MaxSendMsgSize:   requireEnvInt("MAX_SEND_MSG_SIZE"),
+			EnableReflection: requireEnvBool("ENABLE_REFLECTION"),
 		},
 		Logger: LoggerConfig{
-			Level:  getLogLevel("LOG_LEVEL", slog.LevelInfo),
-			Format: getEnv("LOG_FORMAT", "json"),
+			Level:  requireLogLevel("LOG_LEVEL"),
+			Format: requireEnv("LOG_FORMAT"),
 		},
 		Database: DatabaseConfig{
-			URL:         getEnv("DATABASE_URL", ""),
-			MaxConns:    getEnvInt("DB_MAX_CONNS", 25),
-			MinConns:    getEnvInt("DB_MIN_CONNS", 5),
-			MaxIdleTime: getEnvInt("DB_MAX_IDLE_TIME", 300), // 5 minutes
-			MaxLifetime: getEnvInt("DB_MAX_LIFETIME", 3600), // 1 hour
+			URL:         requireEnv("DATABASE_URL"),
+			MaxConns:    requireEnvInt("DB_MAX_CONNS"),
+			MinConns:    requireEnvInt("DB_MIN_CONNS"),
+			MaxIdleTime: requireEnvInt("DB_MAX_IDLE_TIME"),
+			MaxLifetime: requireEnvInt("DB_MAX_LIFETIME"),
 		},
 		Cache: CacheConfig{
-			URL:             getEnv("CACHE_URL", "valkey://localhost:6380"),
-			MaxConns:        getEnvInt("CACHE_MAX_CONNS", 10),
-			MinConns:        getEnvInt("CACHE_MIN_CONNS", 2),
-			ConnMaxIdleTime: getEnvInt("CACHE_MAX_IDLE_TIME", 300), // 5 minutes
-			ConnMaxLifetime: getEnvInt("CACHE_MAX_LIFETIME", 3600), // 1 hour
+			URL:             requireEnv("CACHE_URL"),
+			MaxConns:        requireEnvInt("CACHE_MAX_CONNS"),
+			MinConns:        requireEnvInt("CACHE_MIN_CONNS"),
+			ConnMaxIdleTime: requireEnvInt("CACHE_MAX_IDLE_TIME"),
+			ConnMaxLifetime: requireEnvInt("CACHE_MAX_LIFETIME"),
 		},
 	}
 
@@ -80,29 +81,34 @@ func Load() *Config {
 	return config
 }
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+func requireEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		panic(fmt.Sprintf("Environment variable %s is required but not set", key))
 	}
-	return defaultValue
+	return value
 }
 
-func getEnvInt(key string, defaultValue int) int {
-	envVarStr, found := os.LookupEnv(key)
-	if !found || envVarStr == "" {
-		return defaultValue
-	}
-
+func requireEnvInt(key string) int {
+	envVarStr := requireEnv(key)
 	val, err := strconv.Atoi(envVarStr)
 	if err != nil {
-		slog.Error("Invalid integer value for environment variable", "key", key, "value", envVarStr, "error", err)
-		return defaultValue
+		panic(fmt.Sprintf("Environment variable %s must be a valid integer, got: %s", key, envVarStr))
 	}
 	return val
 }
 
-func getLogLevel(key string, defaultLevel slog.Level) slog.Level {
-	value := os.Getenv(key)
+func requireEnvBool(key string) bool {
+	envVarStr := requireEnv(key)
+	val, err := strconv.ParseBool(envVarStr)
+	if err != nil {
+		panic(fmt.Sprintf("Environment variable %s must be a valid boolean, got: %s", key, envVarStr))
+	}
+	return val
+}
+
+func requireLogLevel(key string) slog.Level {
+	value := requireEnv(key)
 	switch value {
 	case "DEBUG":
 		return slog.LevelDebug
@@ -113,6 +119,6 @@ func getLogLevel(key string, defaultLevel slog.Level) slog.Level {
 	case "ERROR":
 		return slog.LevelError
 	default:
-		return defaultLevel
+		panic(fmt.Sprintf("Environment variable %s must be one of: DEBUG, INFO, WARN, ERROR, got: %s", key, value))
 	}
 }

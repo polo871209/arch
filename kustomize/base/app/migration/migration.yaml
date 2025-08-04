@@ -22,27 +22,11 @@ spec:
               echo "PostgreSQL is ready"
           env:
             - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: rpc-server
-                  key: DATABASE_PASSWORD
+              value: rpc-password
             - name: DATABASE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: rpc-server
-                  key: DATABASE_USER
+              value: rpc-user
             - name: DATABASE_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: rpc-server
-                  key: DATABASE_HOST
-          resources:
-            requests:
-              memory: 32Mi
-              cpu: 50m
-            limits:
-              memory: 64Mi
-              cpu: 100m
+              value: postgres-rw.postgres.svc.cluster.local
       containers:
         - name: migration
           image: rpc-migration:latest

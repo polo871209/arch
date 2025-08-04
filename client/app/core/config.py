@@ -4,21 +4,28 @@ import os
 class Settings:
     def __init__(self) -> None:
         # Server settings
-        self.grpc_host: str = os.getenv("GRPC_HOST", "localhost")
-        self.grpc_port: int = int(os.getenv("GRPC_PORT", "50051"))
+        self.grpc_host: str = self._require_env("GRPC_HOST")
+        self.grpc_port: int = int(self._require_env("GRPC_PORT"))
 
         # API settings
-        self.api_host: str = os.getenv("API_HOST", "0.0.0.0")
-        self.api_port: int = int(os.getenv("API_PORT", "8000"))
-        self.api_reload: bool = os.getenv("API_RELOAD", "true").lower() == "true"
+        self.api_host: str = self._require_env("API_HOST")
+        self.api_port: int = int(self._require_env("API_PORT"))
+        self.api_reload: bool = self._require_env("API_RELOAD").lower() == "true"
 
         # Application settings
-        self.app_name: str = os.getenv("APP_NAME", "User Management API")
-        self.app_version: str = os.getenv("APP_VERSION", "1.0.0")
-        self.debug: bool = os.getenv("DEBUG", "false").lower() == "true"
+        self.app_name: str = self._require_env("APP_NAME")
+        self.app_version: str = self._require_env("APP_VERSION")
+        self.debug: bool = self._require_env("DEBUG").lower() == "true"
 
         # Logging
-        self.log_level: str = os.getenv("LOG_LEVEL", "INFO")
+        self.log_level: str = self._require_env("LOG_LEVEL")
+
+    def _require_env(self, key: str) -> str:
+        """Get environment variable or raise error if not set."""
+        value = os.getenv(key)
+        if value is None:
+            raise ValueError(f"Environment variable {key} is required but not set")
+        return value
 
     @property
     def grpc_address(self) -> str:

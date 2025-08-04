@@ -16,12 +16,23 @@ spec:
       containers:
         - name: rpc-client
           image: rpc-client
+          command: ["python", "-m", "uvicorn"]
+          args:
+            - "app.main:app"
+            - "--host=$(API_HOST)"
+            - "--port=$(API_PORT)"
+            - "--workers=$(API_WORKERS)"
+            - "--log-level=info"
+            - "--no-use-colors"
           ports:
             - containerPort: 8000
               name: http
           envFrom:
+            - configMapRef:
+                name: rpc-client
             - secretRef:
                 name: rpc-client
+                optional: true
           resources:
             limits:
               memory: 512Mi

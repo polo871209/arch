@@ -4,6 +4,7 @@ resources:
   - deploy.yaml
   - istio.yaml
   - service.yaml
+  - configmap.yaml
   - secret.yaml
 labels:
   - pairs:

@@ -47,6 +47,3 @@ HEALTHCHECK --interval=30s \
             --start-period=10s \
             --retries=3 \
             CMD ["/usr/local/bin/server", "--health-check"]
-
-ENTRYPOINT ["/usr/local/bin/server"]
-CMD ["--config", "/etc/server/config.yaml"]

@@ -12,19 +12,25 @@ spec:
             - sh
             - -c
             - until pg_isready -h $(DATABASE_HOST) -p 5432 -U rpc_user; do echo waiting for postgres; sleep 2; done;
-          env:
-            - name: DATABASE_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: rpc-server
-                  key: DATABASE_HOST
+          envFrom:
+            - configMapRef:
+                name: rpc-server
+            - secretRef:
+                name: rpc-server
       containers:
         - name: rpc-server
           image: rpc-server
+          command: ["/usr/local/bin/server"]
+          args:
+            - "--port=$(GRPC_PORT)"
+            - "--log-level=$(LOG_LEVEL)"
+            - "--log-format=$(LOG_FORMAT)"
           ports:
             - containerPort: 50051
               name: grpc
           envFrom:
+            - configMapRef:
+                name: rpc-server
             - secretRef:
                 name: rpc-server
           resources:

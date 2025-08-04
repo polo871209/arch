@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - deploy.yaml
   - service.yaml
+  - configmap.yaml
   - secret.yaml
 labels:
   - pairs:
