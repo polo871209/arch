@@ -46,8 +46,7 @@ manager:
     tag: ""
     imagePullPolicy: IfNotPresent
   collectorImage:
-    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
-    tag: 0.129.1
+    repository: otel/opentelemetry-collector-k8s
   opampBridgeImage:
     repository: ""
     tag: ""

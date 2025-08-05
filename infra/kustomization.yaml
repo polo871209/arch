@@ -7,6 +7,7 @@ resources:
   - efk
   - grafana
   - istio
+  - jaeger/app.yaml
   - kiali
   - opentelemetry
   - prometheus
