@@ -12,10 +12,17 @@ dependencies = [
     "pydantic>=2.11.6",
     "pydantic[email]>=2.11.6",
     "protobuf>=6.31.1",
+    "opentelemetry-instrumentation-fastapi>=0.57b0",
+    "opentelemetry-instrumentation-grpc>=0.57b0",
+    "opentelemetry-propagator-b3>=1.36.0",
+    "opentelemetry-sdk>=1.36.0",
 ]
 
 [tool.pyrefly]
 exclude = ["proto/", "proto/*"]
+
+[tool.pyrefly.errors]
+missing-attribute = false
 
 [tool.ruff]
 exclude = ["proto/", "proto/*"]

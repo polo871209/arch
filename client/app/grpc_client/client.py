@@ -1,6 +1,7 @@
 import logging
 import sys
 from pathlib import Path
+from typing import Dict, Optional
 
 from grpc import aio
 
@@ -9,6 +10,7 @@ from ..core.exceptions import (
     GRPCClientError,
     GRPCServiceUnavailableError,
 )
+from ..core.tracing import create_grpc_metadata
 
 client_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(client_dir))
@@ -25,6 +27,33 @@ class AsyncUserGRPCClient:
         self._address = f"{self._host}:{self._port}"
         self._channel: aio.Channel | None = None
         self._stub: UserServiceStub | None = None
+        self._additional_headers: Dict[str, str] = {}
+
+    def set_additional_headers(self, headers: Dict[str, str]) -> None:
+        """Set additional headers (non-tracing) for gRPC calls."""
+        self._additional_headers = headers
+
+    def get_metadata(self, context_headers: Optional[Dict[str, str]] = None) -> list:
+        """
+        Get gRPC metadata with trace context and additional headers.
+
+        Args:
+            context_headers: Headers from request context (for trace propagation)
+
+        Returns:
+            List of metadata tuples for gRPC call
+        """
+        metadata = []
+
+        # Add trace context headers if provided
+        if context_headers:
+            metadata.extend(create_grpc_metadata(context_headers))
+
+        # Add any additional headers
+        if self._additional_headers:
+            metadata.extend(create_grpc_metadata(self._additional_headers))
+
+        return metadata
 
     async def __aenter__(self) -> "AsyncUserGRPCClient":
         """Async context manager entry."""

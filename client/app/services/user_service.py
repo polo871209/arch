@@ -42,7 +42,9 @@ class UserService:
                 email=user_data.email,
                 age=user_data.age,
             )
-            response = await self.grpc_client.stub.CreateUser(request)
+            response = await self.grpc_client.stub.CreateUser(
+                request, metadata=self.grpc_client.get_metadata()
+            )
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error creating user: {e}")
@@ -51,7 +53,9 @@ class UserService:
     async def get_user(self, user_id: str) -> UserResponse:
         try:
             request = GetUserRequest(id=user_id)
-            response = await self.grpc_client.stub.GetUser(request)
+            response = await self.grpc_client.stub.GetUser(
+                request, metadata=self.grpc_client.get_metadata()
+            )
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error getting user {user_id}: {e}")
@@ -65,7 +69,9 @@ class UserService:
                 email=user_data.email or "",
                 age=user_data.age or 0,
             )
-            response = await self.grpc_client.stub.UpdateUser(request)
+            response = await self.grpc_client.stub.UpdateUser(
+                request, metadata=self.grpc_client.get_metadata()
+            )
             return self._grpc_user_to_pydantic(response.user)
         except grpc.RpcError as e:
             logger.error(f"gRPC error updating user {user_id}: {e}")
@@ -74,7 +80,9 @@ class UserService:
     async def delete_user(self, user_id: str) -> MessageResponse:
         try:
             request = DeleteUserRequest(id=user_id)
-            response = await self.grpc_client.stub.DeleteUser(request)
+            response = await self.grpc_client.stub.DeleteUser(
+                request, metadata=self.grpc_client.get_metadata()
+            )
             return MessageResponse(message=response.message)
         except grpc.RpcError as e:
             logger.error(f"gRPC error deleting user {user_id}: {e}")
@@ -83,7 +91,9 @@ class UserService:
     async def list_users(self, page: int = 1, limit: int = 10) -> UserListResponse:
         try:
             request = ListUsersRequest(page=page, limit=limit)
-            response = await self.grpc_client.stub.ListUsers(request)
+            response = await self.grpc_client.stub.ListUsers(
+                request, metadata=self.grpc_client.get_metadata()
+            )
 
             users = [self._grpc_user_to_pydantic(user) for user in response.users]
             return UserListResponse(

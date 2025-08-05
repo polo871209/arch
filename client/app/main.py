@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from .api import health_router, users_router
 from .core.config import settings
@@ -64,6 +65,13 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
+
+    from opentelemetry.instrumentation.grpc import GrpcInstrumentorClient
+
+    from .core import tracing  # noqa: F401
+
+    GrpcInstrumentorClient().instrument()
+    FastAPIInstrumentor.instrument_app(app)
 
     @app.exception_handler(Exception)
     async def global_exception_handler(
