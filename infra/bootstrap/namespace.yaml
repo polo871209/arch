@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rpc
+  labels:
+    app.kubernetes.io/name: rpc
+    app.kubernetes.io/part-of: rpc-platform
+    monitoring: prometheus
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: rpc-platform
+    monitoring: prometheus
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    app.kubernetes.io/name: argocd
+    app.kubernetes.io/component: gitops
+    app.kubernetes.io/part-of: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: certificate-management
+    app.kubernetes.io/part-of: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    app.kubernetes.io/name: observability
+    app.kubernetes.io/part-of: platform
+    monitoring: prometheus
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elastic-stack
+  labels:
+    app.kubernetes.io/name: elastic-stack
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    app.kubernetes.io/name: istio-system
+    app.kubernetes.io/component: service-mesh
+    app.kubernetes.io/part-of: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cnpg-system
+  labels:
+    app.kubernetes.io/name: cnpg-system
+    app.kubernetes.io/component: database-operator
+    app.kubernetes.io/part-of: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elastic-system
+  labels:
+    app.kubernetes.io/name: elastic-system
+    app.kubernetes.io/component: logging-operator
+    app.kubernetes.io/part-of: platform
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jaeger-operator
+  labels:
+    app.kubernetes.io/name: jaeger-operator
+    app.kubernetes.io/component: tracing-operator
+    app.kubernetes.io/part-of: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opentelemetry-operator
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/component: telemetry-operator
+    app.kubernetes.io/part-of: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kiali-operator
+  labels:
+    name: kiali-operator
+    app.kubernetes.io/name: kiali-operator
+    app.kubernetes.io/component: service-mesh-ui-operator
+    app.kubernetes.io/part-of: observability

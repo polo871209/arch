@@ -27,9 +27,13 @@ start:
     @just build
     @kustomize build {{overlay}}/app | kubectl apply -f -
 
+[working-directory: 'infra/bootstrap']
+infra-bootstrap:
+    @kustomize build . | kubectl apply -f -
+
 [working-directory: 'infra']
 infra:
-    @kustomize build . | kubectl apply -f - | grep -v 'unchanged'
+    @kustomize build . | kubectl apply -f -
 
 proto:
     @protoc -Iproto --go_out=pkg/pb --go_opt=paths=source_relative --go-grpc_out=pkg/pb --go-grpc_opt=paths=source_relative ./proto/user.proto

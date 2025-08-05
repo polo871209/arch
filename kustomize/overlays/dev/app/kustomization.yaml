@@ -6,10 +6,10 @@ resources:
 images:
 - name: rpc-client
   newName: localhost:5000/rpc-client
-  newTag: "20250805134440"
+  newTag: "20250805160256"
 - name: rpc-migration
   newName: localhost:5000/rpc-migration
   newTag: "20250729164343"
 - name: rpc-server
   newName: localhost:5000/rpc-server
-  newTag: "20250805134438"
+  newTag: "20250805160251"

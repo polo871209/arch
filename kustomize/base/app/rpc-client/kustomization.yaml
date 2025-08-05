@@ -7,7 +7,9 @@ resources:
   - secret.yaml
 labels:
   - pairs:
-      app: rpc-client
-      tier: rpc-client
+      app.kubernetes.io/name: rpc-client
+      app.kubernetes.io/component: client
+      app.kubernetes.io/part-of: rpc
+      app.kubernetes.io/managed-by: kustomize
     includeSelectors: true
     includeTemplates: true

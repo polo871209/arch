@@ -1,15 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - argocd
   - cert-manager
+  - istio
   - cloudnative-pg
   - efk
-  - grafana
-  - istio
-  - jaeger/app.yaml
-  - kiali
   - opentelemetry
-  - prometheus
+  - kiali
+  - postgres/app.yaml
   - valkey/app.yaml
-  - namespace.yaml
+  - prometheus
+  - grafana
+  - jaeger/app.yaml
+  - istio-config/app.yaml

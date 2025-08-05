@@ -5,7 +5,9 @@ resources:
   - migration.yaml
 labels:
   - pairs:
-      app: rpc-server
-      tier: db-migration
+      app.kubernetes.io/name: db-migration
+      app.kubernetes.io/component: db-migration
+      app.kubernetes.io/part-of: rpc
+      app.kubernetes.io/managed-by: kustomize
     includeSelectors: true
     includeTemplates: true

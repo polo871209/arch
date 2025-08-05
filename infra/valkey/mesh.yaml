@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: valkey
+spec:
+  host: valkey
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: valkey
+spec:
+  hosts:
+    - valkey
+  tcp:
+    - match:
+        - port: 6379
+      route:
+        - destination:
+            host: valkey
+            port:
+              number: 6379
