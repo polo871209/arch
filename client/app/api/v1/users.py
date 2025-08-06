@@ -4,7 +4,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from ...core.tracing import get_forward_headers
 from ...grpc_client import AsyncUserGRPCClient
 from ...models import (
     MessageResponse,
@@ -20,9 +19,6 @@ router = APIRouter(tags=["users"])
 
 def get_user_service(request: Request) -> UserService:
     grpc_client: AsyncUserGRPCClient = request.app.state.grpc_client
-    # Extract trace context and other headers for distributed tracing
-    tracing_headers = get_forward_headers(request)
-    grpc_client.set_additional_headers(tracing_headers)
     return UserService(grpc_client)
 
 

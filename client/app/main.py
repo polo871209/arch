@@ -1,46 +1,24 @@
 import logging
-import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
 
 from .api import health_router, users_router
 from .core.config import settings
 from .grpc_client.client import AsyncUserGRPCClient
 
-
-# Unified logging configuration
-def setup_logging():
-    """Configure unified logging for FastAPI, uvicorn, and app"""
-
-    # Create formatter with consistent format
-    formatter = logging.Formatter(
-        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
-    # Create console handler
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-
-    # Configure root logger - this will be inherited by all other loggers
-    root_logger = logging.getLogger()
-    root_logger.setLevel(getattr(logging, settings.log_level.upper()))
-    root_logger.handlers.clear()  # Remove any existing handlers
-    root_logger.addHandler(handler)
-
-
-# Setup logging
-setup_logging()
 logger = logging.getLogger(__name__)
+
+trace.set_tracer_provider(TracerProvider())
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # Startup
     logger.info("Starting up FastAPI app...")
     grpc_client = AsyncUserGRPCClient()
     await grpc_client.connect()
@@ -65,12 +43,6 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
-
-    from opentelemetry.instrumentation.grpc import GrpcInstrumentorClient
-
-    from .core import tracing  # noqa: F401
-
-    GrpcInstrumentorClient().instrument()
     FastAPIInstrumentor.instrument_app(app)
 
     @app.exception_handler(Exception)

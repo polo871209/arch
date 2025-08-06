@@ -478,9 +478,9 @@ config:
     [PARSER]
         Name fastapi_log
         Format regex
-        Regex ^(?<level>\w+):\s+(?<client_ip>[\d\.]+):(?<client_port>\d+) - "(?<http_method>\w+) (?<http_path>[^\s]+) (?<http_protocol>[^"]+)" (?<http_status>\d+) (?<status_text>.*)$
-        Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Regex ^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?<level>\w+) \[trace_id=(?<trace_id>[^\s]+) span_id=(?<span_id>[^\s]+)\] (?<message>.*)$
+        Time_Key timestamp
+        Time_Format %Y-%m-%d %H:%M:%S
 
     [PARSER]
         Name go_json_log

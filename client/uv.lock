@@ -252,16 +252,16 @@ wheels = [
 ]
 
 [[package]]
-name = "opentelemetry-propagator-b3"
-version = "1.36.0"
+name = "opentelemetry-instrumentation-logging"
+version = "0.57b0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
-    { name = "typing-extensions" },
+    { name = "opentelemetry-instrumentation" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b5/0a/dfe31e4179b0e893b83282928227093e95b86ae8aee5a9c8a4ff8a0774ce/opentelemetry_propagator_b3-1.36.0.tar.gz", hash = "sha256:dab153b9f24e58b15bc3d9718e8fd2176be72c195d2ef620e174927c79589da4", size = 9574, upload-time = "2025-07-29T15:12:13.702Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/31/0df708cf7c861b083e64b094c048e0fcf72f1aa4beba61333fd089076c82/opentelemetry_instrumentation_logging-0.57b0.tar.gz", hash = "sha256:44dbeb8aaf643e95d7311b699b8d368b1ecdb8404f1563f19f2b3ce2b4c6a035", size = 9969, upload-time = "2025-07-29T15:43:02.381Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/06/4d/13966480db38bea8b942c0402fb93bc088aeb718540435e17d880c23231e/opentelemetry_propagator_b3-1.36.0-py3-none-any.whl", hash = "sha256:3992a7d8b3aea2e421e083bd9212f934929d6ff50d85b4456a04c4290af82c21", size = 8918, upload-time = "2025-07-29T15:12:00.238Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/ff/d2bacc8c3ba74136b156cae80048907bd89a50d1823d81ac875a5fb6d93c/opentelemetry_instrumentation_logging-0.57b0-py3-none-any.whl", hash = "sha256:9f57d13bf776f6507f8ccff16a7aa6e6e753672708943925a794f16152504a04", size = 12577, upload-time = "2025-07-29T15:42:10.602Z" },
 ]
 
 [[package]]
@@ -456,9 +456,10 @@ dependencies = [
     { name = "fastapi" },
     { name = "grpcio" },
     { name = "grpcio-tools" },
+    { name = "opentelemetry-api" },
     { name = "opentelemetry-instrumentation-fastapi" },
     { name = "opentelemetry-instrumentation-grpc" },
-    { name = "opentelemetry-propagator-b3" },
+    { name = "opentelemetry-instrumentation-logging" },
     { name = "opentelemetry-sdk" },
     { name = "protobuf" },
     { name = "pydantic", extra = ["email"] },
@@ -470,9 +471,10 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "grpcio", specifier = ">=1.74.0" },
     { name = "grpcio-tools", specifier = ">=1.74.0" },
+    { name = "opentelemetry-api", specifier = ">=1.36.0" },
     { name = "opentelemetry-instrumentation-fastapi", specifier = ">=0.57b0" },
     { name = "opentelemetry-instrumentation-grpc", specifier = ">=0.57b0" },
-    { name = "opentelemetry-propagator-b3", specifier = ">=1.36.0" },
+    { name = "opentelemetry-instrumentation-logging", specifier = ">=0.57b0" },
     { name = "opentelemetry-sdk", specifier = ">=1.36.0" },
     { name = "protobuf", specifier = ">=6.31.1" },
     { name = "pydantic", specifier = ">=2.11.6" },
