@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	grpc_codes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"grpc-server/internal/cache"
@@ -23,6 +26,7 @@ type CachedUserServer struct {
 	repo   repository.UserRepository
 	cache  cache.Cache
 	logger *logging.Logger
+	tracer trace.Tracer
 }
 
 func NewCachedUserServer(repo repository.UserRepository, cache cache.Cache, logger *slog.Logger) *CachedUserServer {
@@ -30,6 +34,7 @@ func NewCachedUserServer(repo repository.UserRepository, cache cache.Cache, logg
 		repo:   repo,
 		cache:  cache,
 		logger: logging.New(logger),
+		tracer: otel.Tracer("rpc-server.rpc/server"),
 	}
 }
 
@@ -54,10 +59,10 @@ func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserReq
 	if err := s.repo.Create(ctx, user); err != nil {
 		if err == repository.ErrEmailExists {
 			s.logger.Warn("CreateUser email already exists", logging.UserEmail, req.Email)
-			return nil, status.Errorf(codes.AlreadyExists, "user with email %s already exists", req.Email)
+			return nil, status.Errorf(grpc_codes.AlreadyExists, "user with email %s already exists", req.Email)
 		}
 		s.logger.Error("Failed to create user in repository", logging.Error, err, logging.UserEmail, req.Email)
-		return nil, status.Errorf(codes.Internal, "failed to create user")
+		return nil, status.Errorf(grpc_codes.Internal, "failed to create user")
 	}
 
 	if err := s.cacheUser(ctx, user); err != nil {
@@ -100,10 +105,10 @@ func (s *CachedUserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) 
 	if err != nil {
 		if err == repository.ErrUserNotFound {
 			s.logger.Info("User not found", logging.UserID, req.Id)
-			return nil, status.Errorf(codes.NotFound, "user with ID %s not found", req.Id)
+			return nil, status.Errorf(grpc_codes.NotFound, "user with ID %s not found", req.Id)
 		}
 		s.logger.Error("Failed to get user from repository", logging.UserID, req.Id, logging.Error, err)
-		return nil, status.Errorf(codes.Internal, "failed to retrieve user")
+		return nil, status.Errorf(grpc_codes.Internal, "failed to retrieve user")
 	}
 
 	// Cache the user
@@ -127,10 +132,10 @@ func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserReq
 	if err != nil {
 		if err == repository.ErrUserNotFound {
 			s.logger.Info("User not found for update", logging.UserID, req.Id)
-			return nil, status.Errorf(codes.NotFound, "user with ID %s not found", req.Id)
+			return nil, status.Errorf(grpc_codes.NotFound, "user with ID %s not found", req.Id)
 		}
 		s.logger.Error("Failed to get user for update from repository", logging.UserID, req.Id, logging.Error, err)
-		return nil, status.Errorf(codes.Internal, "failed to retrieve user")
+		return nil, status.Errorf(grpc_codes.Internal, "failed to retrieve user")
 	}
 
 	// Check email uniqueness if email is being updated
@@ -139,11 +144,11 @@ func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserReq
 		exists, err := s.repo.EmailExists(ctx, req.Email, req.Id)
 		if err != nil {
 			s.logger.Error("Failed to check email existence", logging.UserEmail, req.Email, logging.Error, err)
-			return nil, status.Errorf(codes.Internal, "failed to validate email")
+			return nil, status.Errorf(grpc_codes.Internal, "failed to validate email")
 		}
 		if exists {
 			s.logger.Warn("Email already exists for different user", logging.UserEmail, req.Email, logging.UserID, req.Id)
-			return nil, status.Errorf(codes.AlreadyExists, "user with email %s already exists", req.Email)
+			return nil, status.Errorf(grpc_codes.AlreadyExists, "user with email %s already exists", req.Email)
 		}
 	}
 
@@ -155,7 +160,7 @@ func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserReq
 	// Save updated user
 	if err := s.repo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to update user in repository", logging.UserID, req.Id, logging.Error, err)
-		return nil, status.Errorf(codes.Internal, "failed to update user")
+		return nil, status.Errorf(grpc_codes.Internal, "failed to update user")
 	}
 
 	// Update cache
@@ -180,10 +185,10 @@ func (s *CachedUserServer) DeleteUser(ctx context.Context, req *pb.DeleteUserReq
 	if err := s.repo.Delete(ctx, req.Id); err != nil {
 		if err == repository.ErrUserNotFound {
 			s.logger.Info("User not found for deletion", logging.UserID, req.Id)
-			return nil, status.Errorf(codes.NotFound, "user with ID %s not found", req.Id)
+			return nil, status.Errorf(grpc_codes.NotFound, "user with ID %s not found", req.Id)
 		}
 		s.logger.Error("Failed to delete user from repository", logging.UserID, req.Id, logging.Error, err)
-		return nil, status.Errorf(codes.Internal, "failed to delete user")
+		return nil, status.Errorf(grpc_codes.Internal, "failed to delete user")
 	}
 
 	// Remove from cache
@@ -233,7 +238,7 @@ func (s *CachedUserServer) ListUsers(ctx context.Context, req *pb.ListUsersReque
 	users, total, err := s.repo.List(ctx, int(offset), int(limit))
 	if err != nil {
 		s.logger.Error("Failed to list users from repository", logging.Error, err)
-		return nil, status.Errorf(codes.Internal, "failed to retrieve users")
+		return nil, status.Errorf(grpc_codes.Internal, "failed to retrieve users")
 	}
 
 	// Convert to protobuf messages
@@ -282,6 +287,14 @@ func (s *CachedUserServer) cacheUser(ctx context.Context, user *models.User) err
 }
 
 func (s *CachedUserServer) invalidateListCache(ctx context.Context) {
+	ctx, span := s.tracer.Start(ctx, "cache.invalidate_list",
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(
+			attribute.String("cache.operation", "invalidate_list"),
+		),
+	)
+	defer span.End()
+
 	s.logger.Debug("Starting list cache invalidation")
 	invalidatedCount := 0
 
@@ -290,11 +303,20 @@ func (s *CachedUserServer) invalidateListCache(ctx context.Context) {
 	for offset := 0; offset < 100; offset += 10 { // Only check first 10 pages
 		for _, limit := range commonLimits {
 			cacheKey := s.userListCacheKey(offset, limit)
-			if err := s.cache.Delete(ctx, cacheKey); err == nil {
-				invalidatedCount++
+			// Use untraced delete to avoid creating individual spans
+			if tracedCache, ok := s.cache.(*cache.TracedCache); ok {
+				if err := tracedCache.DeleteUntraced(ctx, cacheKey); err == nil {
+					invalidatedCount++
+				}
+			} else {
+				// Fallback to regular delete if not a traced cache
+				if err := s.cache.Delete(ctx, cacheKey); err == nil {
+					invalidatedCount++
+				}
 			}
 		}
 	}
 
+	span.SetAttributes(attribute.Int("cache.invalidated_entries", invalidatedCount))
 	s.logger.Debug("List cache invalidation completed", "invalidated_entries", invalidatedCount)
 }

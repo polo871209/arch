@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -17,6 +18,7 @@ import (
 	"grpc-server/internal/database"
 	"grpc-server/internal/repository/postgres"
 	"grpc-server/internal/server"
+	"grpc-server/internal/tracing"
 	pb "grpc-server/pkg/pb"
 )
 
@@ -42,6 +44,27 @@ func main() {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
+	// Initialize OpenTelemetry tracing
+	var tracingShutdown func(context.Context) error
+	if cfg.Tracing.Enabled {
+		var err error
+		tracingShutdown, err = tracing.InitTracing(ctx, tracing.TracingConfig{
+			ServiceName:    cfg.Tracing.ServiceName,
+			ServiceVersion: cfg.Tracing.ServiceVersion,
+			CollectorURL:   cfg.Tracing.CollectorURL,
+			Enabled:        cfg.Tracing.Enabled,
+		})
+		if err != nil {
+			slog.Error("Failed to initialize tracing", "error", err)
+			os.Exit(1)
+		}
+		defer func() {
+			if err := tracingShutdown(ctx); err != nil {
+				slog.Error("Failed to shutdown tracing", "error", err)
+			}
+		}()
+	}
+
 	// Create listener
 	address := fmt.Sprintf(":%s", cfg.Server.Port)
 	listener, err := net.Listen("tcp", address)
@@ -50,13 +73,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create gRPC server with configuration
-	grpcServer := grpc.NewServer(
+	// Create gRPC server with configuration and tracing interceptors
+	grpcOpts := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(cfg.Server.MaxRecvMsgSize),
 		grpc.MaxSendMsgSize(cfg.Server.MaxSendMsgSize),
-	)
+	}
 
-	// Connect to PostgreSQL database
+	// Add tracing interceptors if enabled
+	if cfg.Tracing.Enabled {
+		grpcOpts = append(grpcOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	}
+
+	grpcServer := grpc.NewServer(grpcOpts...)
+
+	// Connect to PostgreSQL database (with tracing)
 	slog.Info("Connecting to PostgreSQL database")
 	dbPool, err := database.Connect(ctx, &cfg.Database)
 	if err != nil {
@@ -81,8 +111,14 @@ func main() {
 	}
 	defer valkeyCache.Close()
 
+	// Wrap cache with tracing if enabled
+	cacheInterface := cache.Cache(valkeyCache)
+	if cfg.Tracing.Enabled {
+		cacheInterface = cache.NewTracedCache(valkeyCache, cfg.Tracing.ServiceName)
+	}
+
 	// Create and register the cached user service
-	userService := server.NewCachedUserServer(userRepo, valkeyCache, logger)
+	userService := server.NewCachedUserServer(userRepo, cacheInterface, logger)
 	pb.RegisterUserServiceServer(grpcServer, userService)
 
 	// Enable reflection if configured
@@ -102,6 +138,7 @@ func main() {
 			"max_recv_size", cfg.Server.MaxRecvMsgSize,
 			"max_send_size", cfg.Server.MaxSendMsgSize,
 			"reflection", cfg.Server.EnableReflection,
+			"tracing_enabled", cfg.Tracing.Enabled,
 		)
 		if err := grpcServer.Serve(listener); err != nil {
 			slog.Error("gRPC server failed", "error", err)

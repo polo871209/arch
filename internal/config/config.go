@@ -12,6 +12,7 @@ type Config struct {
 	Logger   LoggerConfig
 	Database DatabaseConfig
 	Cache    CacheConfig
+	Tracing  TracingConfig
 }
 
 type ServerConfig struct {
@@ -42,6 +43,13 @@ type CacheConfig struct {
 	ConnMaxLifetime int // seconds
 }
 
+type TracingConfig struct {
+	Enabled        bool
+	ServiceName    string
+	ServiceVersion string
+	CollectorURL   string
+}
+
 func Load() *Config {
 	slog.Debug("Loading application configuration")
 
@@ -69,6 +77,12 @@ func Load() *Config {
 			MinConns:        requireEnvInt("CACHE_MIN_CONNS"),
 			ConnMaxIdleTime: requireEnvInt("CACHE_MAX_IDLE_TIME"),
 			ConnMaxLifetime: requireEnvInt("CACHE_MAX_LIFETIME"),
+		},
+		Tracing: TracingConfig{
+			Enabled:        requireEnvBool("TRACING_ENABLED"),
+			ServiceName:    requireEnv("TRACING_SERVICE_NAME"),
+			ServiceVersion: requireEnv("TRACING_SERVICE_VERSION"),
+			CollectorURL:   requireEnv("TRACING_COLLECTOR_URL"),
 		},
 	}
 
