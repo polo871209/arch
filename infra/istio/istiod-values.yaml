@@ -522,9 +522,6 @@ _internal_defaults_do_not_set:
     waypoint:
       # Resources for the waypoint proxy.
       resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
         limits:
           cpu: "2"
           memory: 1Gi

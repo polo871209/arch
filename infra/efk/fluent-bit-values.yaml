@@ -424,7 +424,17 @@ config:
         Remove_key kubernetes.host
         Remove_key kubernetes.docker_id
         Remove_key kubernetes.pod_id
+        Remove_key kubernetes.pod_ip
+        Remove_key kubernetes.container_hash
         
+    [FILTER]
+        Name parser
+        Match kube.var.log.containers.*istio-proxy*
+        Key_Name log
+        Parser istio_envoy_access
+        Reserve_Data On
+        Preserve_Key On
+
     [FILTER]
         Name parser
         Match kube.var.log.containers.*rpc-client*
@@ -468,7 +478,7 @@ config:
     [PARSER]
         Name fastapi_log
         Format regex
-        Regex ^(?<level>\w+):\s+(?<client_ip>[\d\.]+):(?<client_port>\d+) - "(?<method>\w+) (?<path>[^\s]+) (?<protocol>[^"]+)" (?<status_code>\d+) (?<status_text>.*)$
+        Regex ^(?<level>\w+):\s+(?<client_ip>[\d\.]+):(?<client_port>\d+) - "(?<http_method>\w+) (?<http_path>[^\s]+) (?<http_protocol>[^"]+)" (?<http_status>\d+) (?<status_text>.*)$
         Time_Key time
         Time_Format %Y-%m-%dT%H:%M:%S.%L
 
@@ -477,6 +487,13 @@ config:
         Format json
         Time_Key time
         Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+    [PARSER]
+        Name istio_envoy_access
+        Format regex
+        Regex ^\[(?<timestamp>[^\]]+)\] "(?<http_method>\w+) (?<http_path>[^\s]+) (?<http_protocol>[^"]+)" (?<http_status>\d+) (?<response_flags>[^\s]*) (?<response_code_details>[^\s]*) (?<connection_termination_details>[^\s]*) "(?<upstream_transport_failure_reason>[^"]*)" (?<bytes_received>\d+) (?<bytes_sent>\d+) (?<duration>\d+) (?<upstream_service_time>[^\s]*) "(?<x_forwarded_for>[^"]*)" "(?<user_agent>[^"]*)" "(?<x_request_id>[^"]*)" "(?<authority>[^"]*)" "(?<upstream_host>[^"]*)" (?<upstream_cluster>[^\s]*) (?<upstream_local_address>[^\s]*) (?<downstream_local_address>[^\s]*) (?<downstream_remote_address>[^\s]*) (?<requested_server_name>[^\s]*) (?<route_name>[^\s]*)$
+        Time_Key timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
 
   # This allows adding more files with arbitrary filenames to /fluent-bit/etc/conf by providing key/value pairs.
   # The key becomes the filename, the value becomes the file content.

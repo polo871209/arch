@@ -7,3 +7,6 @@ spec:
   tracing:
     - providers:
         - name: jaeger
+  accessLogging:
+    - providers:
+        - name: envoy
