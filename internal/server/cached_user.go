@@ -7,10 +7,11 @@ import (
 	"log/slog"
 	"time"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	grpc_codes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -53,20 +54,21 @@ func (s *CachedUserServer) userListCacheKey(offset, limit int) string {
 }
 
 func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	log := logging.WithTrace(ctx, s.logger)
 	user := models.NewUser(uuid.New().String(), req.Name, req.Email, req.Age)
-	s.logger.Debug("Created domain user model", logging.UserID, user.ID, logging.UserEmail, user.Email)
+	log.Debug("Created domain user model", logging.UserID, user.ID, logging.UserEmail, user.Email)
 
 	if err := s.repo.Create(ctx, user); err != nil {
 		if err == repository.ErrEmailExists {
-			s.logger.Warn("CreateUser email already exists", logging.UserEmail, req.Email)
+			log.Warn("CreateUser email already exists", logging.UserEmail, req.Email)
 			return nil, status.Errorf(grpc_codes.AlreadyExists, "user with email %s already exists", req.Email)
 		}
-		s.logger.Error("Failed to create user in repository", logging.Error, err, logging.UserEmail, req.Email)
+		log.Error("Failed to create user in repository", logging.Error, err, logging.UserEmail, req.Email)
 		return nil, status.Errorf(grpc_codes.Internal, "failed to create user")
 	}
 
 	if err := s.cacheUser(ctx, user); err != nil {
-		s.logger.Warn("Failed to cache new user", logging.UserID, user.ID, logging.Error, err)
+		log.Warn("Failed to cache new user", logging.UserID, user.ID, logging.Error, err)
 	}
 
 	// Invalidate list cache
@@ -79,44 +81,45 @@ func (s *CachedUserServer) CreateUser(ctx context.Context, req *pb.CreateUserReq
 }
 
 func (s *CachedUserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	s.logger.Debug("GetUser request received", logging.UserID, req.Id)
+	log := logging.WithTrace(ctx, s.logger)
+	log.Debug("GetUser request received", logging.UserID, req.Id)
 
 	// Try cache first
 	cacheKey := s.userCacheKey(req.Id)
-	s.logger.Debug("Attempting cache lookup", logging.UserID, req.Id, logging.CacheKey, cacheKey)
+	log.Debug("Attempting cache lookup", logging.UserID, req.Id, logging.CacheKey, cacheKey)
 	cachedData, err := s.cache.Get(ctx, cacheKey)
 	if err == nil {
 		var user models.User
 		if err := json.Unmarshal(cachedData, &user); err == nil {
-			s.logger.Debug("Cache hit for user", logging.UserID, req.Id)
+			log.Debug("Cache hit for user", logging.UserID, req.Id)
 			return &pb.GetUserResponse{
 				User:    user.ToProto(),
 				Message: "User retrieved successfully",
 			}, nil
 		}
-		s.logger.Warn("Failed to unmarshal cached user", logging.UserID, req.Id, logging.Error, err)
+		log.Warn("Failed to unmarshal cached user", logging.UserID, req.Id, logging.Error, err)
 	} else if err != cache.ErrCacheMiss {
-		s.logger.Warn("Cache get failed", logging.UserID, req.Id, logging.Error, err)
+		log.Warn("Cache get failed", logging.UserID, req.Id, logging.Error, err)
 	}
 
 	// Cache miss - get from database
-	s.logger.Debug("Cache miss, fetching from database", logging.UserID, req.Id)
+	log.Debug("Cache miss, fetching from database", logging.UserID, req.Id)
 	user, err := s.repo.GetByID(ctx, req.Id)
 	if err != nil {
 		if err == repository.ErrUserNotFound {
-			s.logger.Info("User not found", logging.UserID, req.Id)
+			log.Info("User not found", logging.UserID, req.Id)
 			return nil, status.Errorf(grpc_codes.NotFound, "user with ID %s not found", req.Id)
 		}
-		s.logger.Error("Failed to get user from repository", logging.UserID, req.Id, logging.Error, err)
+		log.Error("Failed to get user from repository", logging.UserID, req.Id, logging.Error, err)
 		return nil, status.Errorf(grpc_codes.Internal, "failed to retrieve user")
 	}
 
 	// Cache the user
 	if err := s.cacheUser(ctx, user); err != nil {
-		s.logger.Warn("Failed to cache user", logging.UserID, req.Id, logging.Error, err)
+		log.Warn("Failed to cache user", logging.UserID, req.Id, logging.Error, err)
 	}
 
-	s.logger.Debug("User retrieved successfully", logging.UserID, user.ID, logging.UserEmail, user.Email)
+	log.Debug("User retrieved successfully", logging.UserID, user.ID, logging.UserEmail, user.Email)
 	return &pb.GetUserResponse{
 		User:    user.ToProto(),
 		Message: "User retrieved successfully",
@@ -124,30 +127,31 @@ func (s *CachedUserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) 
 }
 
 func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-	s.logger.Debug("UpdateUser request received", logging.UserID, req.Id, "name", req.Name, logging.UserEmail, req.Email, "age", req.Age)
+	log := logging.WithTrace(ctx, s.logger)
+	log.Debug("UpdateUser request received", logging.UserID, req.Id, "name", req.Name, logging.UserEmail, req.Email, "age", req.Age)
 
 	// Get existing user from database (not cache) to ensure consistency
-	s.logger.Debug("Fetching existing user from database", logging.UserID, req.Id)
+	log.Debug("Fetching existing user from database", logging.UserID, req.Id)
 	user, err := s.repo.GetByID(ctx, req.Id)
 	if err != nil {
 		if err == repository.ErrUserNotFound {
-			s.logger.Info("User not found for update", logging.UserID, req.Id)
+			log.Info("User not found for update", logging.UserID, req.Id)
 			return nil, status.Errorf(grpc_codes.NotFound, "user with ID %s not found", req.Id)
 		}
-		s.logger.Error("Failed to get user for update from repository", logging.UserID, req.Id, logging.Error, err)
+		log.Error("Failed to get user for update from repository", logging.UserID, req.Id, logging.Error, err)
 		return nil, status.Errorf(grpc_codes.Internal, "failed to retrieve user")
 	}
 
 	// Check email uniqueness if email is being updated
 	if req.Email != "" && req.Email != user.Email {
-		s.logger.Debug("Checking email uniqueness", "new_email", req.Email, logging.UserID, req.Id)
+		log.Debug("Checking email uniqueness", "new_email", req.Email, logging.UserID, req.Id)
 		exists, err := s.repo.EmailExists(ctx, req.Email, req.Id)
 		if err != nil {
-			s.logger.Error("Failed to check email existence", logging.UserEmail, req.Email, logging.Error, err)
+			log.Error("Failed to check email existence", logging.UserEmail, req.Email, logging.Error, err)
 			return nil, status.Errorf(grpc_codes.Internal, "failed to validate email")
 		}
 		if exists {
-			s.logger.Warn("Email already exists for different user", logging.UserEmail, req.Email, logging.UserID, req.Id)
+			log.Warn("Email already exists for different user", logging.UserEmail, req.Email, logging.UserID, req.Id)
 			return nil, status.Errorf(grpc_codes.AlreadyExists, "user with email %s already exists", req.Email)
 		}
 	}
@@ -155,23 +159,23 @@ func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserReq
 	// Update user
 	oldEmail := user.Email
 	user.Update(req.Name, req.Email, req.Age)
-	s.logger.Debug("User model updated", logging.UserID, user.ID, "old_email", oldEmail, "new_email", user.Email)
+	log.Debug("User model updated", logging.UserID, user.ID, "old_email", oldEmail, "new_email", user.Email)
 
 	// Save updated user
 	if err := s.repo.Update(ctx, user); err != nil {
-		s.logger.Error("Failed to update user in repository", logging.UserID, req.Id, logging.Error, err)
+		log.Error("Failed to update user in repository", logging.UserID, req.Id, logging.Error, err)
 		return nil, status.Errorf(grpc_codes.Internal, "failed to update user")
 	}
 
 	// Update cache
 	if err := s.cacheUser(ctx, user); err != nil {
-		s.logger.Warn("Failed to update cache", logging.UserID, req.Id, logging.Error, err)
+		log.Warn("Failed to update cache", logging.UserID, req.Id, logging.Error, err)
 	}
 
 	// Invalidate list cache
 	s.invalidateListCache(ctx)
 
-	s.logger.Info("User updated successfully", logging.UserID, user.ID, logging.UserEmail, user.Email)
+	log.Info("User updated successfully", logging.UserID, user.ID, logging.UserEmail, user.Email)
 
 	return &pb.UpdateUserResponse{
 		User:    user.ToProto(),
@@ -180,28 +184,29 @@ func (s *CachedUserServer) UpdateUser(ctx context.Context, req *pb.UpdateUserReq
 }
 
 func (s *CachedUserServer) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
-	s.logger.Debug("DeleteUser request received", logging.UserID, req.Id)
+	log := logging.WithTrace(ctx, s.logger)
+	log.Debug("DeleteUser request received", logging.UserID, req.Id)
 
 	if err := s.repo.Delete(ctx, req.Id); err != nil {
 		if err == repository.ErrUserNotFound {
-			s.logger.Info("User not found for deletion", logging.UserID, req.Id)
+			log.Info("User not found for deletion", logging.UserID, req.Id)
 			return nil, status.Errorf(grpc_codes.NotFound, "user with ID %s not found", req.Id)
 		}
-		s.logger.Error("Failed to delete user from repository", logging.UserID, req.Id, logging.Error, err)
+		log.Error("Failed to delete user from repository", logging.UserID, req.Id, logging.Error, err)
 		return nil, status.Errorf(grpc_codes.Internal, "failed to delete user")
 	}
 
 	// Remove from cache
 	cacheKey := s.userCacheKey(req.Id)
-	s.logger.Debug("Removing user from cache", logging.UserID, req.Id, logging.CacheKey, cacheKey)
+	log.Debug("Removing user from cache", logging.UserID, req.Id, logging.CacheKey, cacheKey)
 	if err := s.cache.Delete(ctx, cacheKey); err != nil {
-		s.logger.Warn("Failed to delete user from cache", logging.UserID, req.Id, logging.Error, err)
+		log.Warn("Failed to delete user from cache", logging.UserID, req.Id, logging.Error, err)
 	}
 
 	// Invalidate list cache
 	s.invalidateListCache(ctx)
 
-	s.logger.Info("User deleted successfully", logging.UserID, req.Id)
+	log.Info("User deleted successfully", logging.UserID, req.Id)
 
 	return &pb.DeleteUserResponse{
 		Message: "User deleted successfully",
@@ -209,35 +214,36 @@ func (s *CachedUserServer) DeleteUser(ctx context.Context, req *pb.DeleteUserReq
 }
 
 func (s *CachedUserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	s.logger.Debug("ListUsers request received", "page", req.Page, "limit", req.Limit)
+	log := logging.WithTrace(ctx, s.logger)
+	log.Debug("ListUsers request received", "page", req.Page, "limit", req.Limit)
 
 	// Validate and normalize pagination parameters
 	page := max(req.Page, 1)
 	limit := min(max(req.Limit, 1), 100) // Between 1 and 100
 	offset := (page - 1) * limit
 
-	s.logger.Debug("Normalized pagination parameters", "page", page, "limit", limit, "offset", offset)
+	log.Debug("Normalized pagination parameters", "page", page, "limit", limit, "offset", offset)
 
 	// Try cache first
 	cacheKey := s.userListCacheKey(int(offset), int(limit))
-	s.logger.Debug("Attempting cache lookup for user list", logging.CacheKey, cacheKey)
+	log.Debug("Attempting cache lookup for user list", logging.CacheKey, cacheKey)
 	cachedData, err := s.cache.Get(ctx, cacheKey)
 	if err == nil {
 		var response pb.ListUsersResponse
 		if err := json.Unmarshal(cachedData, &response); err == nil {
-			s.logger.Debug("Cache hit for user list", "offset", offset, "limit", limit, "total", response.Total)
+			log.Debug("Cache hit for user list", "offset", offset, "limit", limit, "total", response.Total)
 			return &response, nil
 		}
-		s.logger.Warn("Failed to unmarshal cached user list", logging.Error, err)
+		log.Warn("Failed to unmarshal cached user list", logging.Error, err)
 	} else if err != cache.ErrCacheMiss {
-		s.logger.Warn("Cache get failed for user list", logging.Error, err)
+		log.Warn("Cache get failed for user list", logging.Error, err)
 	}
 
 	// Cache miss - get from database
-	s.logger.Debug("Cache miss, fetching user list from database", "offset", offset, "limit", limit)
+	log.Debug("Cache miss, fetching user list from database", "offset", offset, "limit", limit)
 	users, total, err := s.repo.List(ctx, int(offset), int(limit))
 	if err != nil {
-		s.logger.Error("Failed to list users from repository", logging.Error, err)
+		log.Error("Failed to list users from repository", logging.Error, err)
 		return nil, status.Errorf(grpc_codes.Internal, "failed to retrieve users")
 	}
 
@@ -256,22 +262,23 @@ func (s *CachedUserServer) ListUsers(ctx context.Context, req *pb.ListUsersReque
 	// Cache the response
 	if responseData, err := json.Marshal(response); err == nil {
 		if err := s.cache.Set(ctx, cacheKey, responseData, defaultCacheTTL); err != nil {
-			s.logger.Warn("Failed to cache user list", logging.Error, err)
+			log.Warn("Failed to cache user list", logging.Error, err)
 		} else {
-			s.logger.Debug("Cached user list", logging.CacheKey, cacheKey, "ttl", defaultCacheTTL)
+			log.Debug("Cached user list", logging.CacheKey, cacheKey, "ttl", defaultCacheTTL)
 		}
 	}
 
-	s.logger.Debug("User list retrieved successfully", "total_count", total, "returned_count", len(users), "page", page)
+	log.Debug("User list retrieved successfully", "total_count", total, "returned_count", len(users), "page", page)
 	return response, nil
 }
 
 func (s *CachedUserServer) cacheUser(ctx context.Context, user *models.User) error {
-	s.logger.Debug("Caching user", logging.UserID, user.ID, logging.UserEmail, user.Email)
+	log := logging.WithTrace(ctx, s.logger)
+	log.Debug("Caching user", logging.UserID, user.ID, logging.UserEmail, user.Email)
 
 	data, err := json.Marshal(user)
 	if err != nil {
-		s.logger.Error("Failed to marshal user for caching", logging.UserID, user.ID, logging.Error, err)
+		log.Error("Failed to marshal user for caching", logging.UserID, user.ID, logging.Error, err)
 		return err
 	}
 
@@ -295,7 +302,8 @@ func (s *CachedUserServer) invalidateListCache(ctx context.Context) {
 	)
 	defer span.End()
 
-	s.logger.Debug("Starting list cache invalidation")
+	log := logging.WithTrace(ctx, s.logger)
+	log.Debug("Starting list cache invalidation")
 	invalidatedCount := 0
 
 	// Simple approach: delete common list cache patterns (most used combinations)
@@ -318,5 +326,5 @@ func (s *CachedUserServer) invalidateListCache(ctx context.Context) {
 	}
 
 	span.SetAttributes(attribute.Int("cache.invalidated_entries", invalidatedCount))
-	s.logger.Debug("List cache invalidation completed", "invalidated_entries", invalidatedCount)
+	log.Debug("List cache invalidation completed", "invalidated_entries", invalidatedCount)
 }

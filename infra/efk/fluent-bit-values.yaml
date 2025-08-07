@@ -419,19 +419,31 @@ config:
         Annotations Off
 
     [FILTER]
-        Name record_modifier
-        Match *
-        Remove_key kubernetes.host
-        Remove_key kubernetes.docker_id
-        Remove_key kubernetes.pod_id
-        Remove_key kubernetes.pod_ip
-        Remove_key kubernetes.container_hash
-        
-    [FILTER]
         Name parser
         Match kube.var.log.containers.*istio-proxy*
         Key_Name log
-        Parser istio_envoy_access
+        Parser json
+        Reserve_Data On
+        Preserve_Key On
+
+    [FILTER]
+        Name parser
+        Match kube.var.log.containers.*istio-proxy*
+        Key_Name traceparent
+        Parser extract_trace_id
+        Reserve_Data On
+        Preserve_Key On
+
+    [FILTER]
+        Name grep
+        Match kube.var.log.containers.*rpc-client*
+        Exclude log \/healthz
+
+    [FILTER]
+        Name parser
+        Match kube.var.log.containers.*rpc-client*
+        Key_Name log
+        Parser fastapi_access_log
         Reserve_Data On
         Preserve_Key On
 
@@ -439,7 +451,7 @@ config:
         Name parser
         Match kube.var.log.containers.*rpc-client*
         Key_Name log
-        Parser fastapi_log
+        Parser fastapi_general_log
         Reserve_Data On
         Preserve_Key On
 
@@ -476,9 +488,21 @@ config:
   ## https://docs.fluentbit.io/manual/pipeline/parsers
   customParsers: |
     [PARSER]
-        Name fastapi_log
+        Name extract_trace_id
         Format regex
-        Regex ^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?<level>\w+) \[trace_id=(?<trace_id>[^\s]+) span_id=(?<span_id>[^\s]+)\] (?<message>.*)$
+        Regex ^00-(?<trace_id>[a-f0-9]{32})-[a-f0-9]{16}-[0-9]{2}$
+
+    [PARSER]
+        Name fastapi_access_log
+        Format regex
+        Regex ^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?<level>\w+) (?<trace_id>[a-f0-9]{32}) (?<client_ip>\d+\.\d+\.\d+\.\d+) "(?<http_method>\w+) (?<http_path>[^"]+)" (?<status_code>\d+)$
+        Time_Key timestamp
+        Time_Format %Y-%m-%d %H:%M:%S
+
+    [PARSER]
+        Name fastapi_general_log
+        Format regex
+        Regex ^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?<level>\w+) (?<trace_id>[a-f0-9]{32}) (?<message>.*)$
         Time_Key timestamp
         Time_Format %Y-%m-%d %H:%M:%S
 
@@ -487,13 +511,6 @@ config:
         Format json
         Time_Key time
         Time_Format %Y-%m-%dT%H:%M:%S.%L
-
-    [PARSER]
-        Name istio_envoy_access
-        Format regex
-        Regex ^\[(?<timestamp>[^\]]+)\] "(?<http_method>\w+) (?<http_path>[^\s]+) (?<http_protocol>[^"]+)" (?<http_status>\d+) (?<response_flags>[^\s]*) (?<response_code_details>[^\s]*) (?<connection_termination_details>[^\s]*) "(?<upstream_transport_failure_reason>[^"]*)" (?<bytes_received>\d+) (?<bytes_sent>\d+) (?<duration>\d+) (?<upstream_service_time>[^\s]*) "(?<x_forwarded_for>[^"]*)" "(?<user_agent>[^"]*)" "(?<x_request_id>[^"]*)" "(?<authority>[^"]*)" "(?<upstream_host>[^"]*)" (?<upstream_cluster>[^\s]*) (?<upstream_local_address>[^\s]*) (?<downstream_local_address>[^\s]*) (?<downstream_remote_address>[^\s]*) (?<requested_server_name>[^\s]*) (?<route_name>[^\s]*)$
-        Time_Key timestamp
-        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
 
   # This allows adding more files with arbitrary filenames to /fluent-bit/etc/conf by providing key/value pairs.
   # The key becomes the filename, the value becomes the file content.

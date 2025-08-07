@@ -10,8 +10,11 @@ from opentelemetry.sdk.trace import TracerProvider
 
 from .api import health_router, users_router
 from .core.config import settings
+from .core.logging import create_access_log_middleware, setup_logging
 from .grpc_client.client import AsyncUserGRPCClient
 
+# Setup logging first
+setup_logging()
 logger = logging.getLogger(__name__)
 
 trace.set_tracer_provider(TracerProvider())
@@ -44,6 +47,9 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
     FastAPIInstrumentor.instrument_app(app)
+
+    # Add access logging middleware
+    app.middleware("http")(create_access_log_middleware())
 
     @app.exception_handler(Exception)
     async def global_exception_handler(

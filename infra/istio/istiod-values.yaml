@@ -211,6 +211,27 @@ _internal_defaults_do_not_set:
   meshConfig:
     enablePrometheusMerge: true
     enableTracing: true
+    accessLogFile: /dev/stdout
+    accessLogEncoding: JSON
+    # https://istio.io/latest/docs/tasks/observability/logs/access-log/
+    accessLogFormat: |
+      {
+        "timestamp": "%START_TIME%",
+        "http_method": "%REQ(:METHOD)%",
+        "http_path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+        "http_protocol": "%PROTOCOL%",
+        "status_code": "%RESPONSE_CODE%",
+        "response_flags": "%RESPONSE_FLAGS%",
+        "bytes_received": "%BYTES_RECEIVED%",
+        "bytes_sent": "%BYTES_SENT%",
+        "duration": "%DURATION%",
+        "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%",
+        "user_agent": "%REQ(USER-AGENT)%",
+        "x_request_id": "%REQ(X-REQUEST-ID)%",
+        "authority": "%REQ(:AUTHORITY)%",
+        "upstream_host": "%UPSTREAM_HOST%",
+        "traceparent": "%REQ(TRACEPARENT)%"
+      }
     defaultConfig:
       tracing: {} # disable legacy MeshConfig tracing options
     defaultProviders:

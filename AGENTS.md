@@ -1,72 +1,25 @@
-# AGENTS.md - Guidelines for Agentic Coding in this Repository
+# AGENTS.md — Quick Guide for Agentic Coding
 
-## Architecture Overview
+## Environment Intro
+- Local Kubernetes via Orbstack; in-cluster services are reachable by service name (and full DNS), e.g., http://grafana or http://grafana.observability.svc.cluster.local
+- Stack: Istio; PostgreSQL (CloudNativePG); Valkey; Grafana/Prometheus/Jaeger/OpenTelemetry; EFK; ArgoCD
 
-**Core Services:**
+## Build/Lint/Test
+- Go: build `go build ./...`; tests `go test ./...`; single pkg `go test ./internal/server`; single test `go test ./internal/server -run '^TestName$'`
+- Go lint: `golangci-lint run` (or `go vet ./...`); SQL gen `sqlc generate`; Proto `just proto`
+- Python (client/): deps `cd client && uv sync`; tests `uv run pytest`; single `uv run pytest client/path/test_x.py::test_y -q`
+- Python lint/format: `uv run ruff check [--fix]`; `uv run ruff format`
+- Infra: `just infra-bootstrap`; `just infra`; app `just start`; migration `just migration`
 
-- `cmd/server/` - Go gRPC server (main service)
-- `client/` - Python FastAPI client (HTTP gateway)
-- `pkg/pb/` - Generated protobuf Go code
-- `client/proto/` - Generated protobuf Python code
+## Code Style — Go
+- Imports: stdlib, external, local (blank lines); layout: `internal/` private, `pkg/` public; context.Context first param
+- Errors: gRPC with `status.Errorf(codes.X, ...)`; prefer `repository.Err*`; wrap with `%w`; logging via `slog` (e.g., `logging.UserID`, `logging.Error`)
+- Naming: CamelCase exported, camelCase unexported
 
-**Infrastructure Stack:**
+## Code Style — Python
+- Ruff formatting (double quotes, 4 spaces); Python >= 3.13; use type hints
+- Imports: isort order (stdlib, third-party, local); exclude `client/proto/` from lint/format
+- Errors/IO: raise FastAPI `HTTPException` or custom; avoid bare `except`; use `async`/`await`; structured logging
 
-- **Orbstack:** Deploy on Mac local kubernetes environment, direct access through service account are available. eg: http://grafana.observability.svc.cluster.local
-- **Service Mesh:** Istio (traffic management, security, observability)
-- **Database:** PostgreSQL (CloudNativePG operator)
-- **Cache:** Valkey (Redis-compatible)
-- **Observability:** Grafana, Prometheus, Jaeger, OpenTelemetry
-- **Logging:** EFK stack (Elasticsearch, Fluent Bit, Kibana)
-- **GitOps:** ArgoCD for continuous deployment
-
-## Build/Test/Lint Commands
-
-**Go (root directory):**
-
-- Build: `go build ./...`
-- Test: `go test ./...` (single package: `go test ./internal/server`)
-- Lint: `golangci-lint run` or `go vet ./...`
-- Generate code: `go generate ./...`
-- SQL generation: `sqlc generate`
-
-**Python (client/ directory):**
-
-- Install deps: `cd client && uv sync`
-- Lint: `cd client && uv run ruff check` (fix: `uv run ruff check --fix`)
-- Format: `cd client && uv run ruff format`
-- Test: `cd client && uv run pytest` (single test: `uv run pytest test_file.py::test_function`)
-
-**Infrastructure:**
-
-- Bootstrap infra: `just infra-bootstrap` (ArgoCD, namespaces)
-- Deploy infra: `just infra` (all infrastructure components)
-- App deploy: `just start` (builds & deploys app services)
-- Migration: `just migration` (database migrations)
-- Proto generation: `just proto`
-
-**Kustomize Structure:**
-
-- Base configs: `kustomize/base/app/` (rpc-server, rpc-client)
-- Overlays: `kustomize/overlays/dev/` (environment-specific configs)
-- Infrastructure: `infra/` (all platform components)
-
-## Code Style Guidelines
-
-**Go:**
-
-- Use structured logging with `slog` and custom fields (`logging.UserID`, `logging.Error`)
-- Error handling: Return `status.Errorf(codes.X, "msg")` for gRPC; use `repository.ErrX` constants
-- Package structure: `internal/` for private code, `pkg/` for public
-- Imports: std lib, external, local (grouped with blank lines)
-- Naming: CamelCase for exported, camelCase for unexported
-- Context: Always pass `context.Context` as first parameter
-
-**Python:**
-
-- Format with Ruff (double quotes, 4 spaces)
-- Type hints required (Python 3.13+)
-- Imports: follow `isort` style, exclude proto files from formatting
-- Error handling: Use FastAPI `HTTPException` or custom exceptions
-- Async/await for I/O operations
-- Logging: Use structured logging with consistent formatter
-
+## Editor/AI Rules
+- No Cursor (.cursor/rules, .cursorrules) or Copilot (.github/copilot-instructions.md) rules found; if added, follow alongside this guide.
