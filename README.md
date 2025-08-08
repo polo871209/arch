@@ -6,6 +6,40 @@
 
 <img width="956" height="679" alt="image" src="https://github.com/user-attachments/assets/9089ba23-5017-4eef-959a-e30b7da87e90" />
 
+### Current Stack
+
+- Languages & Runtimes
+  - Go (gRPC server and internal services under cmd/ and internal/)
+  - Python 3.13 (FastAPI client/gateway under client/)
+- RPC & APIs
+  - gRPC + Protocol Buffers (proto/user.proto; generated code in pkg/pb and client/proto)
+  - FastAPI REST facade over gRPC (client/app)
+- Data & Persistence
+  - PostgreSQL (CloudNativePG operator on Kubernetes; manifests under infra/cloudnative-pg and infra/postgres)
+  - sqlc for type-safe Go data access (internal/database, sqlc.yaml)
+- Caching
+  - Valkey (Redis-compatible) for user/session caching (infra/valkey; internal/cache)
+- Kubernetes & GitOps
+  - Kustomize bases/overlays (kustomize/base and kustomize/overlays)
+  - ArgoCD for GitOps (infra/bootstrap/argocd)
+  - Local Kubernetes via Orbstack
+- Service Mesh & Networking
+  - Istio (ingress, traffic management, telemetry) with configs in infra/istio and infra/istio-config
+  - Kiali for mesh observability (infra/kiali)
+  - Header propagation across services
+- Observability
+  - OpenTelemetry operator/collector (infra/opentelemetry) with OTLP gRPC exporter
+  - Jaeger for distributed tracing (infra/jaeger)
+  - Prometheus for metrics scraping (infra/prometheus)
+  - Grafana for dashboards (infra/grafana)
+  - EFK stack for logs: Elasticsearch via ECK operator, Fluent Bit, Kibana (infra/efk)
+- Containers & Build
+  - Wolfi base images for minimal, secure containers (Dockerfile, Dockerfile.migration, client/Dockerfile)
+  - justfile helpers for proto/codegen/infra tasks
+- Developer Tooling
+  - sqlc for DB codegen; uv for Python env management; ruff for lint/format
+  - Load testing utility (load-test.go)
+
 ### Architecture & SRE Best Practices
 
 - [ ] Design and document system architecture diagrams (service mesh, data flow, dependencies)
