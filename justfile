@@ -39,3 +39,8 @@ proto:
     @protoc -Iproto --go_out=pkg/pb --go_opt=paths=source_relative --go-grpc_out=pkg/pb --go-grpc_opt=paths=source_relative ./proto/user.proto
     @cd client/proto && uv run python -m grpc_tools.protoc -I../../proto --python_out=. --grpc_python_out=. --pyi_out=. ../../proto/user.proto
     @echo "Please manually fix the import of python after proto generation."
+
+[working-directory: 'iac/kibana']
+kibana: 
+    @uv run main.py
+

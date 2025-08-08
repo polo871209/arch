@@ -1,0 +1,16 @@
+{
+  "kibana": {
+    "base_url": "https://eck-stack-eck-kibana-kb-http.observability.svc.cluster.local:5601",
+    "api_key": "X2tQTmlKZ0JjQ3E4Y2s4eDVFSDg6d0g1QWRfb19KX19velNSMXkxWksxdw==",
+    "space_id": null,
+    "timeout": 20.0,
+    "http2": true,
+    "verify_ssl": false
+  },
+  "data_views": [
+    {
+      "name": "Application Log",
+      "title": "logs-*"
+    }
+  ]
+}

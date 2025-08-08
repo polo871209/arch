@@ -1,0 +1,19 @@
+[project]
+name = "kibana-iac"
+version = "0.1.0"
+description = "Kibana IaC utilities (library)"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{ name = "RPC Stack" }]
+dependencies = ["httpx[http2]>=0.28"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pyrefly.errors]
+bad-return = false
+import-error = false
