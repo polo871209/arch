@@ -6,7 +6,6 @@ resources:
   - service.yaml
   - configmap.yaml
   - secret.yaml
-  - postgres-virtualservice.yaml
 labels:
   - pairs:
       app.kubernetes.io/name: rpc-server

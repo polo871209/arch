@@ -400,7 +400,7 @@ config:
   inputs: |
     [INPUT]
         Name tail
-        Path /var/log/containers/*.log
+        Path /var/log/containers/*_rpc_*.log
         multiline.parser cri
         Tag kube.*
         Mem_Buf_Limit 5MB

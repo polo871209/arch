@@ -4,7 +4,7 @@
 
 ### Current stats
 
-<img width="1270" height="629" alt="image" src="https://github.com/user-attachments/assets/6d5878cb-f22c-4960-8935-3a06249227b9" />
+<img width="956" height="679" alt="image" src="https://github.com/user-attachments/assets/9089ba23-5017-4eef-959a-e30b7da87e90" />
 
 ### Architecture & SRE Best Practices
 

@@ -20,13 +20,17 @@ spec:
                 sleep 2
               done
               echo "PostgreSQL is ready"
+          envFrom:
+            - configMapRef:
+                name: rpc-server
+            - secretRef:
+                name: rpc-server
           env:
             - name: PGPASSWORD
-              value: rpc-password
-            - name: DATABASE_USER
-              value: rpc-user
-            - name: DATABASE_HOST
-              value: postgres-rw.postgres.svc.cluster.local
+              valueFrom:
+                secretKeyRef:
+                  name: rpc-server
+                  key: DATABASE_PASSWORD
       containers:
         - name: migration
           image: rpc-migration:latest

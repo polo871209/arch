@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: rpc-postgres
+  name: postgres
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -13,7 +13,7 @@ spec:
     path: infra/postgres
   destination:
     server: https://kubernetes.default.svc
-    namespace: postgres
+    namespace: rpc
   syncPolicy:
     automated:
       prune: true
@@ -26,4 +26,3 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
-

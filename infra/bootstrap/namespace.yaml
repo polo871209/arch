@@ -11,16 +11,6 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: postgres
-  labels:
-    app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: rpc-platform
-    monitoring: prometheus
-    istio-injection: enabled
----
-apiVersion: v1
-kind: Namespace
-metadata:
   name: argocd
   labels:
     app.kubernetes.io/name: argocd

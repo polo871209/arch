@@ -11,7 +11,13 @@ spec:
           command:
             - sh
             - -c
-            - until pg_isready -h $(DATABASE_HOST) -p 5432 -U rpc_user; do echo waiting for postgres; sleep 2; done;
+            - until pg_isready -h $(DATABASE_HOST) -p 5432 -U $(DATABASE_USER); do echo waiting for postgres; sleep 2; done;
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rpc-server
+                  key: DATABASE_PASSWORD
           envFrom:
             - configMapRef:
                 name: rpc-server
