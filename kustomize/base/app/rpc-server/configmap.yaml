@@ -27,4 +27,3 @@ data:
   TRACING_SERVICE_NAME: "rpc-server.rpc"
   TRACING_SERVICE_VERSION: "1.0.0"
   TRACING_COLLECTOR_URL: "jaeger-collector.observability.svc.cluster.local:4317"
-

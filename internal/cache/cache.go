@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"grpc-server/internal/config"
+	"grpc-server/internal/logging"
 
 	"github.com/valkey-io/valkey-go"
 )
@@ -29,17 +30,17 @@ type Cache interface {
 // ValkeyCache implements Cache interface using Valkey
 type ValkeyCache struct {
 	client valkey.Client
-	logger *slog.Logger
+	logger *logging.Logger
 }
 
-func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache, error) {
+func NewValkeyCache(cfg *config.CacheConfig, base *slog.Logger) (*ValkeyCache, error) {
 	const prefix = "valkey://"
 	address, ok := strings.CutPrefix(cfg.URL, prefix)
 	if !ok || address == "" {
 		return nil, errors.New("invalid cache URL: must start with valkey:// and include host:port")
 	}
 
-	logger.Info("Creating Valkey client", "address", address)
+	base.Info("Creating Valkey client", "address", address)
 
 	client, err := valkey.NewClient(valkey.ClientOption{
 		InitAddress: []string{address},
@@ -50,17 +51,17 @@ func NewValkeyCache(cfg *config.CacheConfig, logger *slog.Logger) (*ValkeyCache,
 
 	return &ValkeyCache{
 		client: client,
-		logger: logger,
+		logger: logging.New(base),
 	}, nil
 }
 
 func (c *ValkeyCache) Get(ctx context.Context, key string) ([]byte, error) {
-	c.logger.Debug("Attempting cache get", "key", key)
+	c.logger.DebugCtx(ctx, "Attempting cache get", "key", key)
 
 	result := c.client.Do(ctx, c.client.B().Get().Key(key).Build())
 	if err := result.Error(); err != nil {
 		if valkey.IsValkeyNil(err) {
-			c.logger.Debug("Cache miss", "key", key)
+			c.logger.DebugCtx(ctx, "Cache miss", "key", key)
 			return nil, ErrCacheMiss
 		}
 		c.logger.Error("Cache get operation failed", "key", key, "error", err)
@@ -73,12 +74,12 @@ func (c *ValkeyCache) Get(ctx context.Context, key string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to convert result: %w", err)
 	}
 
-	c.logger.Debug("Cache hit successful", "key", key, "value_size", len(data))
+	c.logger.DebugCtx(ctx, "Cache hit successful", "key", key, "value_size", len(data))
 	return data, nil
 }
 
 func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
-	c.logger.Debug("Attempting cache set", "key", key, "expiration", expiration)
+	c.logger.DebugCtx(ctx, "Attempting cache set", "key", key, "expiration", expiration)
 
 	var data []byte
 	var err error
@@ -107,12 +108,12 @@ func (c *ValkeyCache) Set(ctx context.Context, key string, value any, expiration
 		return fmt.Errorf("cache set failed: %w", err)
 	}
 
-	c.logger.Debug("Cache set successful", "key", key, "expiration", expiration, "value_size", len(data))
+	c.logger.DebugCtx(ctx, "Cache set successful", "key", key, "expiration", expiration, "value_size", len(data))
 	return nil
 }
 
 func (c *ValkeyCache) Delete(ctx context.Context, key string) error {
-	c.logger.Debug("Attempting cache delete", "key", key)
+	c.logger.DebugCtx(ctx, "Attempting cache delete", "key", key)
 
 	result := c.client.Do(ctx, c.client.B().Del().Key(key).Build())
 	if err := result.Error(); err != nil {
@@ -127,7 +128,7 @@ func (c *ValkeyCache) Delete(ctx context.Context, key string) error {
 		return fmt.Errorf("failed to get delete result: %w", err)
 	}
 
-	c.logger.Debug("Cache delete completed", "key", key, "deleted_count", deletedCount)
+	c.logger.DebugCtx(ctx, "Cache delete completed", "key", key, "deleted_count", deletedCount)
 	return nil
 }
 

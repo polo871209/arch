@@ -19,6 +19,7 @@ import (
 	"grpc-server/internal/repository/postgres"
 	"grpc-server/internal/server"
 	"grpc-server/internal/tracing"
+	"grpc-server/internal/logging"
 	pb "grpc-server/pkg/pb"
 )
 
@@ -32,14 +33,15 @@ func main() {
 
 	// Setup structured logging
 	var handler slog.Handler
+	// Note: ensure import "grpc-server/internal/logging" is present for the TraceContextHandler
 	if cfg.Logger.Format == "text" {
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		handler = logging.NewTraceContextHandler(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			Level: cfg.Logger.Level,
-		})
+		}))
 	} else {
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		handler = logging.NewTraceContextHandler(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: cfg.Logger.Level,
-		})
+		}))
 	}
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
@@ -100,7 +102,7 @@ func main() {
 	}()
 
 	// Create PostgreSQL repository
-	userRepo := postgres.NewUserRepository(dbPool)
+	userRepo := postgres.NewUserRepository(dbPool, logger)
 
 	// Connect to Valkey cache
 	slog.Info("Connecting to Valkey cache")

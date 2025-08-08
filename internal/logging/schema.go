@@ -3,8 +3,6 @@ package logging
 import (
 	"context"
 	"log/slog"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Standard field names - use these consistently across all logging
@@ -26,13 +24,16 @@ func New(logger *slog.Logger) *Logger {
 	return &Logger{Logger: logger}
 }
 
-// WithTrace returns a logger enriched with trace_id from context if available
-func WithTrace(ctx context.Context, logger *Logger) *Logger {
-	sc := trace.SpanContextFromContext(ctx)
-	if !sc.IsValid() {
-		return logger
-	}
-	return &Logger{Logger: logger.With(
-		TraceID, sc.TraceID().String(),
-	)}
+// Context-aware convenience methods
+func (l *Logger) DebugCtx(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelDebug, msg, args...)
+}
+func (l *Logger) InfoCtx(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelInfo, msg, args...)
+}
+func (l *Logger) WarnCtx(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelWarn, msg, args...)
+}
+func (l *Logger) ErrorCtx(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelError, msg, args...)
 }
