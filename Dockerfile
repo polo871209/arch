@@ -41,9 +41,3 @@ WORKDIR /app
 COPY --from=builder /app/server /usr/local/bin/server
 
 EXPOSE 50051
-
-HEALTHCHECK --interval=30s \
-            --timeout=5s \
-            --start-period=10s \
-            --retries=3 \
-            CMD ["/usr/local/bin/server", "--health-check"]
