@@ -83,6 +83,12 @@ class DataViewsAPI:
         if r.status_code not in (200, 202, 204, 404):
             r.raise_for_status()
 
+    def set_default(self, view_id: str, *, force: bool = True) -> dict[str, Any]:
+        payload = {"data_view_id": view_id, "force": force}
+        r = self.http.post("/api/data_views/default", json=payload, xsrf=True)
+        r.raise_for_status()
+        return r.json()
+
     # --- Declarative sync ---
     def sync(self, desired: list[DataViewSpec]) -> dict[str, Any]:
         """Make Kibana match the desired list of DataViewSpec.
@@ -103,7 +109,8 @@ class DataViewsAPI:
         deleted: list[dict[str, Any]] = []
         skipped: list[dict[str, Any]] = []
 
-        for spec in desired:
+        first_view_id: str | None = None
+        for idx, spec in enumerate(desired):
             if not spec.title and spec.name not in existing_by_name:
                 skipped.append({"reason": "missing_title", "name": spec.name})
                 continue
@@ -112,12 +119,25 @@ class DataViewsAPI:
             dv_obj = resp.get("data_view", {}) if isinstance(resp, dict) else {}
             if (view_id := dv_obj.get("id")):
                 updated.append(self.update(view_id, spec, refresh_fields=False))
+                if first_view_id is None:
+                    first_view_id = view_id
             else:
                 created.append(resp)
+                if first_view_id is None:
+                    maybe_id = dv_obj.get("id")
+                    if isinstance(maybe_id, str):
+                        first_view_id = maybe_id
 
         for name, dv in existing_by_name.items():
             if name and name not in desired_names and (view_id := dv.get("id")):
                 self.delete(view_id)
                 deleted.append({"id": view_id, "name": name})
+
+        # Set the first desired data view as default if we obtained an id
+        if first_view_id:
+            try:
+                self.set_default(first_view_id, force=True)
+            except Exception as e:  # noqa: BLE001
+                skipped.append({"reason": "set_default_failed", "error": str(e)})
 
         return {"created": created, "updated": updated, "deleted": deleted, "skipped": skipped}
