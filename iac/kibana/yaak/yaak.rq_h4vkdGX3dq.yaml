@@ -1,0 +1,22 @@
+type: http_request
+model: http_request
+id: rq_h4vkdGX3dq
+createdAt: 2025-08-11T02:09:23.077990
+updatedAt: 2025-08-11T03:29:40.871975
+workspaceId: wk_jEPbb29RGw
+folderId: fl_QC5BzbKjKS
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers:
+- enabled: true
+  name: ''
+  value: ''
+  id: PGFXMWRMXH
+method: GET
+name: Get dataview
+sortPriority: 1000.0
+url: ${[ BASE_URL ]}/api/data_views/data_view/${[ response.body.path(request='rq_BL7Szqomxs', path=b64'JC5kYXRhX3ZpZXdbMF0uaWQ', behavior='smart') ]}
+urlParameters: []

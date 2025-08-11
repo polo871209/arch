@@ -1,0 +1,22 @@
+type: http_request
+model: http_request
+id: rq_BL7Szqomxs
+createdAt: 2025-08-11T02:06:18.286437
+updatedAt: 2025-08-11T03:37:31.457081
+workspaceId: wk_jEPbb29RGw
+folderId: fl_QC5BzbKjKS
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers:
+- enabled: true
+  name: ''
+  value: ''
+  id: kiETTxbwdb
+method: GET
+name: List data view
+sortPriority: 0.0
+url: ${[ BASE_URL ]}/api/data_views
+urlParameters: []

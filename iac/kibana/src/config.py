@@ -40,20 +40,14 @@ class AppConfig:
 
         cfg = json.loads(path.read_text())
         kib = cfg.get("kibana", {})
-        # Support legacy singular key 'data_view' while preferring 'data_views'
-        data_views = cfg.get("data_views") or cfg.get("data_view", [])
-
-        base_url = str(kib.get("base_url", "")).rstrip("/")
-        api_key = str(kib.get("api_key", ""))
-        # Default: disable SSL verification for in-cluster/self-signed endpoints unless explicitly set
-        verify_ssl = bool(kib.get("verify_ssl", False))
+        data_views = cfg.get("data_views", [])
 
         return AppConfig(
-            base_url=base_url,
-            api_key=api_key,
+            base_url=str(kib.get("base_url", "")).rstrip("/"),
+            api_key=str(kib.get("api_key", "")),
             space_id=kib.get("space_id"),
             timeout=float(kib.get("timeout", 20.0)),
             http2=bool(kib.get("http2", True)),
-            verify_ssl=verify_ssl,
+            verify_ssl=bool(kib.get("verify_ssl", False)),
             data_views=data_views if isinstance(data_views, list) else [],
         )

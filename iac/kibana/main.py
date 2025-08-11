@@ -23,6 +23,8 @@ def run_sync(cfg: AppConfig) -> dict[str, Any]:
                 title=item.get("title"),
                 timeFieldName=item.get("timeFieldName"),
                 allowNoIndex=bool(item.get("allowNoIndex", False)),
+                fieldFormats=item.get("fieldFormats"),
+                refresh_fields=bool(item.get("refresh_fields", False)),
             )
             for item in cfg.data_views
             if isinstance(item, dict) and item.get("name")
@@ -42,23 +44,22 @@ def main() -> None:
     try:
         summary = run_sync(cfg)
         print(json.dumps(summary, indent=2))
+    except httpx.HTTPStatusError as e:
+        sc = e.response.status_code
+        if sc == 401:
+            raise SystemExit(
+                "Unauthorized (401): API key invalid or missing required scheme. "
+                "Set kibana.api_key (e.g., 'ApiKey <token>' or raw token) and try again."
+            ) from e
+        if sc == 403:
+            raise SystemExit(
+                "Forbidden (403): API key lacks required Kibana privileges for Data Views endpoints."
+            ) from e
+        raise SystemExit(f"HTTP error {sc}: {e}") from e
+    except httpx.HTTPError as e:
+        raise SystemExit(f"HTTP client error: {e}") from e
     except Exception as e:
-        # Provide clearer errors for common HTTP issues
-        if isinstance(e, httpx.HTTPStatusError):
-            sc = e.response.status_code
-            if sc == 401:
-                raise SystemExit(
-                    "Unauthorized (401): API key invalid or missing required scheme. "
-                    "Set kibana.api_key (e.g., 'ApiKey <token>' or raw token) and try again."
-                )
-            if sc == 403:
-                raise SystemExit(
-                    "Forbidden (403): API key lacks required Kibana privileges for Data Views endpoints."
-                )
-            raise SystemExit(f"HTTP error {sc}: {e}")
-        if isinstance(e, httpx.HTTPError):
-            raise SystemExit(f"HTTP client error: {e}")
-        raise SystemExit(str(e))
+        raise SystemExit(str(e)) from e
 
 
 if __name__ == "__main__":

@@ -1,1 +1,1 @@
-# Package marker for api modules
+"""Kibana API modules."""

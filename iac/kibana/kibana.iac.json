@@ -10,7 +10,97 @@
   "data_views": [
     {
       "name": "Application Log",
-      "title": "logs-*"
+      "refresh_fields": true,
+      "title": "logs-*",
+      "fieldFormats": {
+        "trace_id": {
+          "id": "url",
+          "params": {
+            "urlTemplate": "/app/discover#/?_a=(filters:!((query:(match_phrase:(trace_id:'{{value}}')))))",
+            "labelTemplate": "{{value}}"
+          }
+        },
+        "status_code": {
+          "id": "color",
+          "params": {
+            "colors": [
+              {
+                "range": "100:200",
+                "text": "#FFFFFF",
+                "background": "#2986cc",
+                "boolean": "true"
+              },
+              {
+                "range": "200:300",
+                "text": "#FFFFFF",
+                "background": "#36b37e",
+                "boolean": "true"
+              },
+              {
+                "range": "300:400",
+                "text": "#000000",
+                "background": "#ffd966",
+                "boolean": "true"
+              },
+              {
+                "range": "400:500",
+                "text": "#FFFFFF",
+                "background": "#f7971e",
+                "boolean": "true"
+              },
+              {
+                "range": "500:600",
+                "text": "#FFFFFF",
+                "background": "#d7263d",
+                "boolean": "true"
+              }
+            ]
+          }
+        },
+        "level": {
+          "id": "color",
+          "params": {
+            "colors": [
+              {
+                "regex": "^(TRACE|DEBUG)$",
+                "text": "#000000",
+                "background": "#b3e6ff",
+                "boolean": "true"
+              },
+              {
+                "regex": "^INFO$",
+                "text": "#000000",
+                "background": "#d9ead3",
+                "boolean": "true"
+              },
+              {
+                "regex": "^NOTICE$",
+                "text": "#000000",
+                "background": "#fff2cc",
+                "boolean": "true"
+              },
+              {
+                "regex": "^(WARN|WARNING)$",
+                "text": "#000000",
+                "background": "#ffe599",
+                "boolean": "true"
+              },
+              {
+                "regex": "^(ERROR|ERR)$",
+                "text": "#FFFFFF",
+                "background": "#e06666",
+                "boolean": "true"
+              },
+              {
+                "regex": "^(FATAL|CRITICAL)$",
+                "text": "#FFFFFF",
+                "background": "#990000",
+                "boolean": "true"
+              }
+            ]
+          }
+        }
+      }
     }
   ]
 }

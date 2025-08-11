@@ -1,0 +1,24 @@
+type: folder
+model: folder
+id: fl_XuM5s4MJWR
+createdAt: 2025-08-11T03:22:21.463062
+updatedAt: 2025-08-11T03:24:22.893092
+workspaceId: wk_jEPbb29RGw
+folderId: null
+authentication:
+  disabled: false
+  key: Authorization
+  value: ApiKey X2tQTmlKZ0JjQ3E4Y2s4eDVFSDg6d0g1QWRfb19KX19velNSMXkxWksxdw==
+authenticationType: apikey
+description: ''
+headers:
+- enabled: true
+  name: kbn-xsrf
+  value: 'true'
+  id: CjnUp69HHt
+- enabled: true
+  name: ''
+  value: ''
+  id: JxC3PXIwT2
+name: All
+sortPriority: 0.0

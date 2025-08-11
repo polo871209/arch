@@ -9,26 +9,20 @@ class KibanaAuth:
     base_url: str
     api_key: str
     space_id: str | None = None
-    # Not strictly part of auth, but keep minimal surface here
 
 
 class KibanaHTTP:
-    """Minimal HTTP helper focused on structure (not optimized yet)."""
+    """Minimal HTTP helper for Kibana API requests."""
 
     def __init__(
         self, auth: KibanaAuth, *, timeout: float = 20.0, http2: bool = True, verify: bool = True
     ):
         self.auth = auth
-        # 'verify=False' allows insecure HTTPS in dev (self-signed certs, etc.)
         self._client = httpx.Client(timeout=timeout, http2=http2, verify=verify)
 
     @staticmethod
     def _auth_value(raw: str) -> str:
-        """Return normalized Authorization header value.
-
-        Accepts either already-schemed values (ApiKey/Bearer/Basic) or a raw token
-        and applies the ApiKey scheme by default.
-        """
+        """Return normalized Authorization header value."""
         if not raw:
             return raw
         val = raw.strip()
@@ -40,7 +34,8 @@ class KibanaHTTP:
     def _url(self, path: str) -> str:
         path = path if path.startswith("/") else "/" + path
         if self.auth.space_id:
-            return f"{self.auth.base_url}/s/{httpx.QueryParams({}).encode_component(self.auth.space_id)}/{path.lstrip('/')}"
+            encoded_space = httpx.QueryParams({}).encode_component(self.auth.space_id)
+            return f"{self.auth.base_url}/s/{encoded_space}/{path.lstrip('/')}"
         return f"{self.auth.base_url}{path}"
 
     def _headers(

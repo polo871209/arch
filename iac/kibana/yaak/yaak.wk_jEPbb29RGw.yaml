@@ -1,0 +1,14 @@
+type: workspace
+model: workspace
+id: wk_jEPbb29RGw
+createdAt: 2025-08-11T02:04:18.806606
+updatedAt: 2025-08-11T02:07:26.505485
+authentication: {}
+authenticationType: null
+description: ''
+headers: []
+name: kibana api
+encryptionKeyChallenge: null
+settingValidateCertificates: false
+settingFollowRedirects: true
+settingRequestTimeout: 0

@@ -1,0 +1,13 @@
+type: folder
+model: folder
+id: fl_QC5BzbKjKS
+createdAt: 2025-08-11T02:08:29.163252
+updatedAt: 2025-08-11T03:25:24.852812
+workspaceId: wk_jEPbb29RGw
+folderId: fl_XuM5s4MJWR
+authentication: {}
+authenticationType: null
+description: https://www.elastic.co/docs/api/doc/kibana/v9/group/endpoint-data-views
+headers: []
+name: Data View
+sortPriority: 750.0

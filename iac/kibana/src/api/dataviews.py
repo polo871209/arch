@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,24 +13,27 @@ class DataViewSpec:
     title: str | None = None
     timeFieldName: str | None = None
     allowNoIndex: bool = False
+    fieldFormats: dict[str, Any] | None = None
+    refresh_fields: bool = False
 
     def as_payload(self) -> dict[str, Any]:
         dv: dict[str, Any] = {"name": self.name}
-        # Derive a reasonable default title from name if not provided.
-        # Kibana requires 'title' to resolve indices. Use a slug-like transform.
-        derived_title = None
+        # Derive a reasonable default title from name if not provided
         if not self.title and self.name:
-            import re
-
             # Lowercase, replace non-word with underscores, collapse repeats, strip underscores
             slug = re.sub(r"\W+", "_", self.name.lower())
             slug = re.sub(r"_+", "_", slug).strip("_")
             derived_title = slug or self.name
+        else:
+            derived_title = None
+
         dv["title"] = self.title or derived_title
         if self.timeFieldName:
             dv["timeFieldName"] = self.timeFieldName
         if self.allowNoIndex:
             dv["allowNoIndex"] = True
+        if self.fieldFormats:
+            dv["fieldFormats"] = self.fieldFormats
         return dv
 
 
@@ -45,7 +49,10 @@ class DataViewsAPI:
     def __init__(self, http: KibanaHTTP):
         self.http = http
 
-    # --- Raw endpoints ---
+    def _encode_id(self, view_id: str) -> str:
+        """URL encode the view ID safely."""
+        return httpx.URL("/").copy_with(path=f"/{view_id}").path.lstrip("/")
+
     def list_views(self) -> list[dict[str, Any]]:
         r = self.http.get(self.LIST)
         r.raise_for_status()
@@ -57,12 +64,14 @@ class DataViewsAPI:
         if override:
             payload["override"] = True
         r = self.http.post(self.CREATE, json=payload, xsrf=True)
-        r.raise_for_status()
+        if r.status_code >= 400:
+            raise httpx.HTTPStatusError(
+                f"Create failed: {r.status_code} {r.text}", request=r.request, response=r
+            )
         return r.json()
 
     def get(self, view_id: str) -> dict[str, Any]:
-        encoded = httpx.URL("/").copy_with(path=f"/{view_id}").path.lstrip("/")
-        r = self.http.get(self.GET.format(id=encoded))
+        r = self.http.get(self.GET.format(id=self._encode_id(view_id)))
         r.raise_for_status()
         return r.json()
 
@@ -72,14 +81,12 @@ class DataViewsAPI:
         payload: dict[str, Any] = {"data_view": spec.as_payload()}
         if refresh_fields:
             payload["refresh_fields"] = True
-        encoded = httpx.URL("/").copy_with(path=f"/{view_id}").path.lstrip("/")
-        r = self.http.post(self.UPDATE.format(id=encoded), json=payload, xsrf=True)
+        r = self.http.post(self.UPDATE.format(id=self._encode_id(view_id)), json=payload, xsrf=True)
         r.raise_for_status()
         return r.json()
 
     def delete(self, view_id: str) -> None:
-        encoded = httpx.URL("/").copy_with(path=f"/{view_id}").path.lstrip("/")
-        r = self.http.delete(self.DELETE.format(id=encoded), xsrf=True)
+        r = self.http.delete(self.DELETE.format(id=self._encode_id(view_id)), xsrf=True)
         if r.status_code not in (200, 202, 204, 404):
             r.raise_for_status()
 
@@ -89,19 +96,13 @@ class DataViewsAPI:
         r.raise_for_status()
         return r.json()
 
-    # --- Declarative sync ---
     def sync(self, desired: list[DataViewSpec]) -> dict[str, Any]:
         """Make Kibana match the desired list of DataViewSpec.
 
-        Behavior:
-        - Upsert any views present in desired (create override then update when ID known).
-        - Delete any existing views not present in desired (name match).
-        Notes:
-        - If a spec has no title, we will try to update an existing view by name only; if none exists, it is skipped.
+        Upserts any views present in desired and deletes any existing views not present.
         Returns summary with created/updated/deleted/skipped lists.
         """
         existing_by_name = {dv.get("name"): dv for dv in self.list_views() if isinstance(dv, dict)}
-
         desired_names = {d.name for d in desired}
 
         created: list[dict[str, Any]] = []
@@ -110,30 +111,28 @@ class DataViewsAPI:
         skipped: list[dict[str, Any]] = []
 
         first_view_id: str | None = None
-        for idx, spec in enumerate(desired):
+        for spec in desired:
             if not spec.title and spec.name not in existing_by_name:
                 skipped.append({"reason": "missing_title", "name": spec.name})
                 continue
 
             resp = self.create(spec, override=True)
             dv_obj = resp.get("data_view", {}) if isinstance(resp, dict) else {}
-            if (view_id := dv_obj.get("id")):
-                updated.append(self.update(view_id, spec, refresh_fields=False))
+            if view_id := dv_obj.get("id"):
+                updated.append(self.update(view_id, spec, refresh_fields=spec.refresh_fields))
                 if first_view_id is None:
                     first_view_id = view_id
             else:
                 created.append(resp)
-                if first_view_id is None:
-                    maybe_id = dv_obj.get("id")
-                    if isinstance(maybe_id, str):
-                        first_view_id = maybe_id
+                if first_view_id is None and (maybe_id := dv_obj.get("id")):
+                    first_view_id = maybe_id
 
         for name, dv in existing_by_name.items():
             if name and name not in desired_names and (view_id := dv.get("id")):
                 self.delete(view_id)
                 deleted.append({"id": view_id, "name": name})
 
-        # Set the first desired data view as default if we obtained an id
+        # Set the first desired data view as default
         if first_view_id:
             try:
                 self.set_default(first_view_id, force=True)
