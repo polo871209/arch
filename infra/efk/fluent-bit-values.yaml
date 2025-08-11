@@ -422,7 +422,7 @@ config:
         Name parser
         Match kube.var.log.containers.*istio-proxy*
         Key_Name log
-        Parser json
+        Parser go_json_log
         Reserve_Data On
         Preserve_Key On
 
@@ -510,7 +510,9 @@ config:
         Name go_json_log
         Format json
         Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        # Updated to handle RFC3339 nano with trailing 'Z' (UTC) e.g. 2025-08-11T08:33:56.430406565Z
+        # %L parses fractional seconds (any precision up to nanoseconds)
+        Time_Format %Y-%m-%dT%H:%M:%S.%LZ
 
   # This allows adding more files with arbitrary filenames to /fluent-bit/etc/conf by providing key/value pairs.
   # The key becomes the filename, the value becomes the file content.
