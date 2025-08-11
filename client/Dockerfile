@@ -48,4 +48,3 @@ COPY --from=builder --chown=appuser:appuser /app/proto/ ./proto/
 USER appuser
 
 EXPOSE 8000/tcp
-

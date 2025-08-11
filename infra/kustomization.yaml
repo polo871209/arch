@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
   - cert-manager
   - istio
-  - cloudnative-pg
   - efk
   - opentelemetry
   - kiali
