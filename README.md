@@ -2,43 +2,28 @@
 
 ~~Just some rpc learning~~
 
-### Current stats
+## 🏗️ Architecture Overview
 
-<img width="956" height="679" alt="image" src="https://github.com/user-attachments/assets/9089ba23-5017-4eef-959a-e30b7da87e90" />
+<img width="1535" height="1292" alt="Untitled-2025-03-26-1749" src="https://github.com/user-attachments/assets/074477ca-92b0-43c5-a1a0-eac24b46976d" />
 
-### Current Stack
+### Core Services
 
-- Languages & Runtimes
-  - Go (gRPC server and internal services under cmd/ and internal/)
-  - Python 3.13 (FastAPI client/gateway under client/)
-- RPC & APIs
-  - gRPC + Protocol Buffers (proto/user.proto; generated code in pkg/pb and client/proto)
-  - FastAPI REST facade over gRPC (client/app)
-- Data & Persistence
-  - PostgreSQL (CloudNativePG operator on Kubernetes; manifests under infra/cloudnative-pg and infra/postgres)
-  - sqlc for type-safe Go data access (internal/database, sqlc.yaml)
-- Caching
-  - Valkey (Redis-compatible) for user/session caching (infra/valkey; internal/cache)
-- Kubernetes & GitOps
-  - Kustomize bases/overlays (kustomize/base and kustomize/overlays)
-  - ArgoCD for GitOps (infra/bootstrap/argocd)
-  - Local Kubernetes via Orbstack
-- Service Mesh & Networking
-  - Istio (ingress, traffic management, telemetry) with configs in infra/istio and infra/istio-config
-  - Kiali for mesh observability (infra/kiali)
-  - Header propagation across services
-- Observability
-  - OpenTelemetry operator/collector (infra/opentelemetry) with OTLP gRPC exporter
-  - Jaeger for distributed tracing (infra/jaeger)
-  - Prometheus for metrics scraping (infra/prometheus)
-  - Grafana for dashboards (infra/grafana)
-  - EFK stack for logs: Elasticsearch via ECK operator, Fluent Bit, Kibana (infra/efk)
-- Containers & Build
-  - Wolfi base images for minimal, secure containers (Dockerfile, Dockerfile.migration, client/Dockerfile)
-  - justfile helpers for proto/codegen/infra tasks
-- Developer Tooling
-  - sqlc for DB codegen; uv for Python env management; ruff for lint/format
-  - Load testing utility (load-test.go)
+- **gRPC Server** (`cmd/server`, `internal/`) - Go-based user service with PostgreSQL persistence
+- **API Gateway** (`client/`) - Python FastAPI REST facade over gRPC
+- **Database** - PostgreSQL with CloudNativePG operator and sqlc code generation
+- **Cache** - Valkey (Redis-compatible) for session/user caching
+
+### Infrastructure Stack
+
+- **Kubernetes** - Local cluster via Orbstack with Kustomize manifests
+- **Service Mesh** - Istio with mTLS, traffic management, and telemetry
+- **GitOps** - ArgoCD for declarative deployments and automated sync
+- **Observability** - Complete O11y stack with correlation:
+  - **Metrics** - Prometheus + Grafana dashboards
+  - **Traces** - OpenTelemetry + Jaeger with B3 propagation
+  - **Logs** - EFK stack (Elasticsearch, Fluent Bit, Kibana)
+- **Security** - Wolfi base images, Istio mTLS, cert-manager
+- **Protocols** - gRPC with Protobuf, REST APIs, OpenTelemetry OTLP
 
 ### Architecture & SRE Best Practices
 
@@ -48,146 +33,54 @@
 - [ ] Design for high availability and disaster recovery (multi-zone, backup/restore)
 - [ ] Set up horizontal and vertical pod autoscaling in Kubernetes
 
-### Infrastructure as Code & CI/CD
+### SRE Platform Engineering Roadmap
 
-- [ ] Implement infrastructure as code (IaC) for all environments (e.g., Terraform, Pulumi)
-- [ ] Set up automated CI/CD pipelines with rollback and canary deployment strategies
-- [ ] Enforce configuration management and secrets management best practices
-- [ ] Implement blue/green and canary deployments in Kubernetes
+#### Infrastructure & GitOps
 
-### Containerization
+- [x] Kustomize bases/overlays + ArgoCD GitOps deployment
+- [x] Wolfi secure container images + CloudNativePG operator
+- [ ] Infrastructure as code (Terraform/Pulumi) for multi-environment
+- [ ] CI/CD pipelines with automated rollback and canary strategies
+- [ ] Secrets management and configuration drift detection
 
-- [x] Use Wolfi images for secure, minimal containers
-- [ ] Learn debug with attach functions
-- [ ] Build and push images to a container registry
+#### Service Mesh & Traffic Management
 
-### Kubernetes & GitOps
+- [x] Istio service mesh with mTLS and ingress gateway
+- [x] **Complete OpenTelemetry + Jaeger integration with propagation**
+- [x] **Unified trace correlation: Istio sidecar ↔ application spans**
+- [ ] Canary deployments with traffic shifting (weight/header-based routing)
+- [ ] Circuit breakers, retries, timeouts, and RBAC policies
+- [ ] Fault injection for chaos engineering
 
-- [x] Write Kustomize bases and overlays for all environments
-- [x] Use CloudNativePG for Postgres operator in k8s
-- [ ] Deploy and manage services with Kustomize/ArgoCD
+#### Observability (SRE Golden Signals: LETS)
 
-### ArgoCD
+- [x] **Prometheus + Grafana dashboards for infrastructure/applications**
+- [x] **EFK stack: Elasticsearch (ECK), Fluent Bit, Kibana with TLS**
+- [x] **Distributed tracing with end-to-end correlation (gRPC → DB/Cache)**
+- [ ] **SLI/SLO monitoring with error budgets and alerting**
+- [ ] **Golden signals alerting (Latency, Errors, Traffic, Saturation)**
+- [ ] Anomaly detection and synthetic monitoring
 
-- [x] Use ArgoCD for GitOps deployment and automated sync
-- [ ] Implement canary deployment with ArgoCD
-- [ ] Set up auto rollback based on Prometheus metrics
-- [ ] Configure ArgoCD notifications and health checks
-- [ ] Manage application lifecycle and sync policies with ArgoCD
+#### Data Platform & Persistence
 
-### Service Mesh
+- [x] **SQL migrations + sqlc code generation + repository pattern**
+- [x] **PostgreSQL with CloudNativePG operator in Kubernetes**
+- [x] **Valkey (Redis) caching with TTL policies and operation tracing**
+- [ ] Database backup/restore, HA failover, and performance tuning
+- [ ] Cache clustering and warming strategies
 
-- [x] Configure Istio for service mesh
-- [x] Set up Istio ingress gateway and traffic management
-- [x] **Set up Istio telemetry (metrics, logs, traces) **
-  - [x] Complete Istio + OpenTelemetry + Jaeger integration
-  - [x] Unified trace correlation between Istio sidecar and application
-  - [x] B3 header propagation for service mesh compatibility
-  - [x] End-to-end request tracing from ingress to database operations
-- [ ] Implement canary deployment with Istio
-- [ ] Configure Istio traffic shifting (weight-based routing, header-based routing)
-- [ ] Enable Istio mTLS for service-to-service encryption
-- [ ] Set up Istio ingress and egress policies
-- [ ] Implement Istio RBAC for service-level access control
-- [ ] Configure Istio retries, timeouts, and circuit breaking
-- [ ] Use Istio for A/B testing and progressive delivery
-- [ ] Document Istio configuration, policies, and best practices
+#### Application Services
 
-### Database & Persistence
+- [x] **gRPC services with Protobuf + FastAPI REST gateway**
+- [x] **Async gRPC clients with comprehensive error handling**
+- [ ] Message queue system (NATS/Kafka/Redis Streams) with workers
+- [ ] API versioning, authentication, and rate limiting
+- [ ] Event-driven architecture with idempotency patterns
 
-- [x] Write SQL migrations for user table
-- [x] Use sqlc to generate Go database code
-- [x] Implement repository pattern for DB access in Go
-- [x] Integrate Postgres with CloudNativePG in Kubernetes
+#### Reliability & Operations
 
-### Caching
-
-- [x] Integrate Valkey (Redis-compatible) for caching
-- [x] Use Valkey for user/session caching in the application
-
-### RPC (gRPC & Protobuf)
-
-- [x] Define service and messages in `.proto` files
-- [x] Generate gRPC code for Go and Python
-- [x] Implement gRPC server in Go
-- [x] Implement async gRPC client in Python
-- [x] Use gRPC stubs for client-server communication
-- [x] CRUD operations via gRPC (Create, Read, Update, Delete, List)
-- [x] Integrate gRPC with FastAPI endpoints
-- [x] Error handling and health checks in gRPC clients
-- [x] Use Protobuf for message serialization
-
-### Python API
-
-- [x] Use FastAPI for REST endpoints
-- [x] Use Pydantic models for validation
-- [x] Organize API endpoints with routers and services
-
-### Monitoring & Observability (Prometheus & Grafana)
-
-- [x] Set up Prometheus for metrics scraping
-- [x] Configure Grafana dashboards for application and infrastructure
-- [x] Add basic tracing (e.g., OpenTelemetry, Jaeger, or Zipkin)
-- [x] Configure Prometheus to scrape Fluent Bit and PostgreSQL metrics
-- [ ] Set up Grafana dashboards for SLOs, latency, error rates, and resource usage
-- [ ] Configure alerting rules for SRE golden signals (latency, traffic, errors, saturation)
-- [x] Correlate logs, metrics, and traces for root cause analysis
-
-### Telemetry & Advanced Observability
-
-- [x] **Implement distributed tracing (OpenTelemetry, Jaeger)**
-  - [x] Full OpenTelemetry integration with OTLP gRPC exporter
-  - [x] Service name consistency between Istio and application (`rpc-server.rpc`)
-  - [x] B3 propagation for Istio/Jaeger trace context compatibility
-  - [x] Unified trace correlation: Istio sidecar + application spans in same trace
-- [x] **Instrument code for custom metrics, traces, and logs**
-  - [x] gRPC server instrumentation with automatic span creation
-  - [x] Database operation tracing (PostgreSQL queries with context keys)
-  - [x] Cache operation tracing (Valkey Redis operations)
-  - [x] Optimized bulk operations (single span for cache invalidation vs 20+ spans)
-- [x] **Export application and infrastructure metrics to Prometheus**
-- [x] **Integrate tracing context propagation across gRPC, HTTP, and async jobs**
-  - [x] gRPC metadata propagation for distributed tracing
-  - [x] HTTP header propagation through Istio service mesh
-  - [x] Trace context preservation across service boundaries
-- [x] **Document observability architecture and data flows**
-  - [x] Complete request flow: Istio → gRPC → Database/Cache operations
-  - [x] All spans correlated under single trace ID for end-to-end visibility
-- [ ] Automate telemetry collection and export in CI/CD pipelines
-- [ ] Evaluate and implement anomaly detection for proactive incident response
-- [x] **End-to-End Trace Correlation**: Fixed separation between Istio and application traces
-- [x] **Service Mesh Integration**: Full Istio + OpenTelemetry compatibility with B3 headers
-- [x] **Database Instrumentation**: PostgreSQL query tracing with typed context keys
-- [ ] **Observability Stack**: Complete integration with Jaeger, Prometheus, Grafana, and EFK
-
-### EFK Stack (Elasticsearch, Fluent Bit, Kibana)
-
-- [x] Deploy Elasticsearch cluster in Kubernetes using ECK operator
-- [x] Set up Fluent Bit for log collection and shipping from pods
-- [x] Configure Fluent Bit to parse and forward Kubernetes logs to Elasticsearch
-- [x] Index application, infrastructure, and audit logs in Elasticsearch (`kubernetes-*` indices)
-- [x] Set up Kibana for log visualization and search
-- [x] Secure EFK stack with TLS and authentication (elastic user)
-- [x] Configure Fluent Bit metrics endpoint for Prometheus scraping
-- [ ] Design log retention, rollover, and archiving policies
-- [ ] Create custom Kibana dashboards for application-specific logs
-- [ ] Set up alerting in Kibana for error rates, anomalies, and critical events
-- [x] Integrate EFK with Prometheus/Grafana for unified observability
-- [x] Automate log pipeline deployment via ArgoCD and Kustomize
-
-### Message Queue & Worker System
-
-- [ ] Evaluate and select a message queue technology (e.g., RabbitMQ, NATS, Kafka, Redis Streams)
-- [ ] Design message flow and worker architecture (producer, queue, consumer/worker)
-- [ ] Implement message producer in application (e.g., enqueue jobs/events)
-- [ ] Implement worker service to consume and process messages
-- [ ] Ensure idempotency and error handling in worker logic
-- [ ] Set up monitoring and alerting for queue depth, worker failures, and throughput
-- [ ] Document message formats, queue topics, and retry/backoff strategies
-- [ ] Integrate message queue with existing services (API, database, etc.)
-- [ ] Automate deployment and scaling of worker services
-- [ ] Test end-to-end message flow and failure scenarios
-
-### Multilanguage Compile
-
-- [ ] Compile at least one different language with Golang
+- [ ] **Chaos engineering with Litmus/Chaos Mesh**
+- [ ] **Load testing, disaster recovery automation**
+- [ ] **Incident response with PagerDuty/Opsgenie integration**
+- [ ] Policy as code (OPA/Gatekeeper) and compliance scanning
+- [ ] Cost optimization, capacity planning, and automated remediation
