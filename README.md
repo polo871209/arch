@@ -4,7 +4,7 @@
 
 ## 🏗️ Architecture Overview
 
-<img width="1535" height="1292" alt="Untitled-2025-03-26-1749" src="https://github.com/user-attachments/assets/074477ca-92b0-43c5-a1a0-eac24b46976d" />
+<img width="1535" height="1292" alt="Untitled-2025-03-26-1749" src="https://github.com/user-attachments/assets/a0df4883-9c86-44ce-96ab-c98d26291158" />
 
 ### Core Services
 
