@@ -299,13 +299,19 @@ func (s *CachedUserServer) invalidateListCache(ctx context.Context) {
 	s.logger.DebugCtx(ctx, "Starting list cache invalidation")
 	invalidatedCount := 0
 
-	// Simple approach: delete common list cache patterns (most used combinations)
-	commonLimits := []int{10, 20, 50, 100}
-	for offset := 0; offset < 100; offset += 10 { // Only check first 10 pages
-		for _, limit := range commonLimits {
+	// Comprehensive approach: delete cache patterns for common pagination scenarios
+	// Cover more realistic pagination patterns based on typical user behavior
+	commonLimits := []int{1, 5, 10, 20, 25, 50, 100}
+	maxPages := 20 // Cover first 20 pages for each limit
+
+	for _, limit := range commonLimits {
+		for page := range maxPages {
+			offset := page * limit
 			cacheKey := s.userListCacheKey(offset, limit)
-			// Use untraced delete to avoid creating individual spans
+
+			// Safe type assertion with proper error handling
 			if tracedCache, ok := s.cache.(*cache.TracedCache); ok {
+				// Use untraced delete to avoid creating individual spans
 				if err := tracedCache.DeleteUntraced(ctx, cacheKey); err == nil {
 					invalidatedCount++
 				}

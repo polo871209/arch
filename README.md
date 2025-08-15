@@ -1,4 +1,4 @@
-# Monorepo for leaning
+# Monorepo for learning
 
 ~~Just some rpc learning~~
 

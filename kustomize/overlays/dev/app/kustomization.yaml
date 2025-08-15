@@ -12,4 +12,4 @@ images:
   newTag: "20250729164343"
 - name: rpc-server
   newName: localhost:5000/rpc-server
-  newTag: "20250811180503"
+  newTag: "20250815102435"
