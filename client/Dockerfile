@@ -25,6 +25,8 @@ COPY proto/ ./proto/
 # Runtime stage
 FROM cgr.dev/chainguard/wolfi-base:latest
 
+USER nonroot 
+
 RUN apk add --no-cache \
       ca-certificates \
       python-3.13 \
@@ -34,8 +36,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH="/app"
 
-RUN adduser -D -u 1001 -s /bin/sh appuser
-
 WORKDIR /app
 
 COPY --from=builder /app/.venv /app/.venv
@@ -44,7 +44,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY --from=builder --chown=appuser:appuser /app/app/ ./app/
 COPY --from=builder --chown=appuser:appuser /app/proto/ ./proto/
-
-USER appuser
 
 EXPOSE 8000/tcp

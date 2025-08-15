@@ -33,8 +33,7 @@ RUN file server | grep -q "statically linked"
 # Runtime stage
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-RUN addgroup -S app && adduser -S app -G app
-USER app
+USER nonroot
 
 WORKDIR /app
 
