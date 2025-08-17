@@ -12,7 +12,7 @@ spec:
           command:
             - sh
             - -c
-            - until nc -z rpc-server.rpc.svc.cluster.local 50051; do echo waiting for rpc server; sleep 2; done;
+            - until nc -z rpc-server.arch.svc.cluster.local 50051; do echo waiting for rpc server; sleep 2; done;
       containers:
         - name: rpc-client
           image: rpc-client

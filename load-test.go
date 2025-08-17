@@ -364,9 +364,14 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID i
 		methods = append(methods, func(c context.Context) error {
 			fakeID := fmt.Sprintf("nf-%d", rand.Intn(1_000_000))
 			req, _ := http.NewRequestWithContext(c, "GET", lt.baseURL+"/v1/users/"+fakeID, nil)
-			resp, err := lt.doRequest(req); if err != nil { return fmt.Errorf("nf get error: %w", err) }
+			resp, err := lt.doRequest(req)
+			if err != nil {
+				return fmt.Errorf("nf get error: %w", err)
+			}
 			defer resp.Body.Close()
-			if resp.StatusCode == http.StatusNotFound { return fmt.Errorf("intentional not found %s", fakeID) }
+			if resp.StatusCode == http.StatusNotFound {
+				return fmt.Errorf("intentional not found %s", fakeID)
+			}
 			return nil
 		})
 	}
@@ -376,18 +381,28 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID i
 			b, _ := json.Marshal(bad)
 			req, _ := http.NewRequestWithContext(c, "POST", lt.baseURL+"/v1/users", bytes.NewBuffer(b))
 			req.Header.Set("Content-Type", "application/json")
-			resp, err := lt.doRequest(req); if err != nil { return fmt.Errorf("bad create err: %w", err) }
+			resp, err := lt.doRequest(req)
+			if err != nil {
+				return fmt.Errorf("bad create err: %w", err)
+			}
 			defer resp.Body.Close()
-			if resp.StatusCode < 400 { return fmt.Errorf("expected 4xx, got %d", resp.StatusCode) }
+			if resp.StatusCode < 400 {
+				return fmt.Errorf("expected 4xx, got %d", resp.StatusCode)
+			}
 			return fmt.Errorf("intentional invalid create %d", resp.StatusCode)
 		})
 	}
 	if rand.Float32() < 0.3 { // Bad list params
 		methods = append(methods, func(c context.Context) error {
 			req, _ := http.NewRequestWithContext(c, "GET", fmt.Sprintf("%s/v1/users?page=%s&limit=%s", lt.baseURL, "zz", "-1"), nil)
-			resp, err := lt.doRequest(req); if err != nil { return fmt.Errorf("bad list err: %w", err) }
+			resp, err := lt.doRequest(req)
+			if err != nil {
+				return fmt.Errorf("bad list err: %w", err)
+			}
 			defer resp.Body.Close()
-			if resp.StatusCode < 400 { return fmt.Errorf("expected 4xx list, got %d", resp.StatusCode) }
+			if resp.StatusCode < 400 {
+				return fmt.Errorf("expected 4xx list, got %d", resp.StatusCode)
+			}
 			return fmt.Errorf("intentional bad list %d", resp.StatusCode)
 		})
 	}
@@ -412,9 +427,9 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID i
 
 func main() {
 	// Configuration - targeting the FastAPI client on port 8000
-	baseURL := "http://rpc-client.rpc.svc.cluster.local:8000" // FastAPI client service
-	interval := 2 * time.Second                               // Interval between test cycles
-	numWorkers := 4                                           // Number of parallel workers
+	baseURL := "http://rpc-client.arch.svc.cluster.local:8000" // FastAPI client service
+	interval := 2 * time.Second                                // Interval between test cycles
+	numWorkers := 4                                            // Number of parallel workers
 
 	log.Printf("🚀 Starting HTTP load tester")
 	log.Printf("📡 Base URL: %s", baseURL)

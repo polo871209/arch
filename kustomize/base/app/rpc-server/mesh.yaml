@@ -45,6 +45,6 @@ spec:
         - port: 50051
       route:
         - destination:
-            host: rpc-server.rpc.svc.cluster.local
+            host: rpc-server.arch.svc.cluster.local
             port:
               number: 50051

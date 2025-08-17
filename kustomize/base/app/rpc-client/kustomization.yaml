@@ -9,7 +9,7 @@ labels:
   - pairs:
       app.kubernetes.io/name: rpc-client
       app.kubernetes.io/component: client
-      app.kubernetes.io/part-of: rpc
+      app.kubernetes.io/part-of: arch
       app.kubernetes.io/managed-by: kustomize
     includeSelectors: true
     includeTemplates: true

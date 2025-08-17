@@ -7,7 +7,7 @@ data:
   API_PORT: "8000"
   API_WORKERS: "1"
   API_RELOAD: "true"
-  GRPC_HOST: "rpc-server.rpc.svc.cluster.local"
+  GRPC_HOST: "rpc-server.arch.svc.cluster.local"
   GRPC_PORT: "50051"
   LOG_LEVEL: "INFO"
   DEBUG: "true"

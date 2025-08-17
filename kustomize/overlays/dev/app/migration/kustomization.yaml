@@ -10,5 +10,5 @@ labels:
 images:
 - name: rpc-migration
   newName: localhost:5000/rpc-migration
-  newTag: "20250811172653"
-nameSuffix: "-20250811172653"
+  newTag: "20250818104604"
+nameSuffix: "-20250818104604"

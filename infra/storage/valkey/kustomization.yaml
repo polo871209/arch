@@ -1,12 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: arch
+namespace: storage
 resources:
-  - migration.yaml
+  - mesh.yaml
+  - valkey.yaml
 labels:
   - pairs:
-      app.kubernetes.io/name: db-migration
-      app.kubernetes.io/component: db-migration
+      app.kubernetes.io/name: valkey
+      app.kubernetes.io/component: cache
       app.kubernetes.io/part-of: arch
       app.kubernetes.io/managed-by: kustomize
     includeSelectors: true
