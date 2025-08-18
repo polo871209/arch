@@ -1,0 +1,19 @@
+# Version control
+.git
+.gitignore
+
+# Documentation
+*.md
+
+# Parent directory files not needed for client
+../cmd/
+../internal/
+../pkg/
+../argos/
+../iac/
+../load-test.go
+../Dockerfile*
+../justfile
+../sqlc.yaml
+../go.mod
+../go.sum

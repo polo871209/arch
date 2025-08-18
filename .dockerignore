@@ -1,0 +1,27 @@
+# Version control
+.git
+.gitignore
+
+# CI/CD
+.github/
+
+# Documentation
+*.md
+README.md
+AGENTS.md
+
+# Python client code
+client/
+
+# Infrastructure and deployment
+argos/
+iac/
+
+# Load testing
+load-test.go
+
+# SQL migration files (not needed for server build)
+internal/database/migrations/
+
+# Dockerfile files
+Dockerfile.migration
