@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: rpc-migration
+  name: migration
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "30"
@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/polo871209/arch-manifest.git
     targetRevision: main
-    path: base/app/migration
+    path: overlays/dev/migration
   destination:
     server: https://kubernetes.default.svc
     namespace: arch

@@ -17,3 +17,6 @@
 ../sqlc.yaml
 ../go.mod
 ../go.sum
+
+Dockerfile
+

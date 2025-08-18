@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: "https://github.com/polo871209/arch.git"
     targetRevision: main
-    path: infra/storage/postgres
+    path: argos/storage/postgres
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:

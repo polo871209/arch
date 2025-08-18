@@ -20,8 +20,6 @@ iac/
 # Load testing
 load-test.go
 
-# SQL migration files (not needed for server build)
-internal/database/migrations/
-
 # Dockerfile files
+Dockerfile
 Dockerfile.migration

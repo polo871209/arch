@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: arch-valkey
+  name: valkey
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: "https://github.com/polo871209/arch.git"
     targetRevision: main
-    path: infra/storage/valkey
+    path: argos/storage/valkey
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
