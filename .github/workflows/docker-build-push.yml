@@ -115,21 +115,21 @@ jobs:
       - name: Update image tags using kustomize edit
         run: |
           cd manifests
-          
+
           # Extract image tags (get the first tag from each output)
           SERVER_TAG=$(echo "${{ needs.build-and-push.outputs.rpc-server-tag }}" | head -n1)
           CLIENT_TAG=$(echo "${{ needs.build-and-push.outputs.rpc-client-tag }}" | head -n1)
           MIGRATION_TAG=$(echo "${{ needs.build-and-push.outputs.rpc-migration-tag }}" | head -n1)
-          
+
           # Update dev overlay for app
           cd overlays/dev/app
           kustomize edit set image rpc-server="$SERVER_TAG"
           kustomize edit set image rpc-client="$CLIENT_TAG"
-          
+
           # Update dev overlay for migration
-          cd ../migration
+          cd migration
           kustomize edit set image rpc-migration="$MIGRATION_TAG"
-          
+
           # Show changes
           cd ../../..
           git diff
@@ -139,7 +139,7 @@ jobs:
           cd manifests
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           if git diff --quiet; then
             echo "No changes to commit"
           else

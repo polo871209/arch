@@ -42,8 +42,8 @@
 just local-build
 
 # Deploy infrastructure
-just infra-bootstrap  # ArgoCD, observability stack
-just infra            # Databases, service mesh
+just argos-bootstrap  # ArgoCD, observability stack
+just argos            # Databases, service mesh
 
 # Generate protobuf/gRPC code
 just proto
