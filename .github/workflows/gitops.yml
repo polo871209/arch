@@ -162,7 +162,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: polo871209/arch-manifest
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           path: manifests
 
       - name: Install kustomize
