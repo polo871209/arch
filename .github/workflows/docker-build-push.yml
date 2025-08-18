@@ -11,6 +11,10 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      rpc-server-tag: ${{ steps.server-meta.outputs.tags }}
+      rpc-client-tag: ${{ steps.client-meta.outputs.tags }}
+      rpc-migration-tag: ${{ steps.migration-meta.outputs.tags }}
     strategy:
       matrix:
         include:
@@ -20,6 +24,9 @@ jobs:
           - component: rpc-client
             dockerfile: ./client/Dockerfile
             context: ./client
+          - component: rpc-migration
+            dockerfile: ./Dockerfile.migration
+            context: .
 
     steps:
       - name: Checkout repository
@@ -35,8 +42,37 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      - name: Extract metadata for rpc-server
+        if: matrix.component == 'rpc-server'
+        id: server-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=auto
+            prefix=${{ matrix.component }}-
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=${{ matrix.component }}-
+
+      - name: Extract metadata for rpc-client
+        if: matrix.component == 'rpc-client'
+        id: client-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=auto
+            prefix=${{ matrix.component }}-
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=${{ matrix.component }}-
+
+      - name: Extract metadata for rpc-migration
+        if: matrix.component == 'rpc-migration'
+        id: migration-meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -54,8 +90,64 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ matrix.component == 'rpc-server' && steps.server-meta.outputs.tags || matrix.component == 'rpc-client' && steps.client-meta.outputs.tags || steps.migration-meta.outputs.tags }}
+          labels: ${{ matrix.component == 'rpc-server' && steps.server-meta.outputs.labels || matrix.component == 'rpc-client' && steps.client-meta.outputs.labels || steps.migration-meta.outputs.labels }}
           platforms: linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  update-manifests:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: polo871209/arch-manifest
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: manifests
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Update image tags using kustomize edit
+        run: |
+          cd manifests
+          
+          # Extract image tags (get the first tag from each output)
+          SERVER_TAG=$(echo "${{ needs.build-and-push.outputs.rpc-server-tag }}" | head -n1)
+          CLIENT_TAG=$(echo "${{ needs.build-and-push.outputs.rpc-client-tag }}" | head -n1)
+          MIGRATION_TAG=$(echo "${{ needs.build-and-push.outputs.rpc-migration-tag }}" | head -n1)
+          
+          # Update dev overlay for app
+          cd overlays/dev/app
+          kustomize edit set image rpc-server="$SERVER_TAG"
+          kustomize edit set image rpc-client="$CLIENT_TAG"
+          
+          # Update dev overlay for migration
+          cd ../migration
+          kustomize edit set image rpc-migration="$MIGRATION_TAG"
+          
+          # Show changes
+          cd ../../..
+          git diff
+
+      - name: Commit and push changes
+        run: |
+          cd manifests
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add .
+            git commit -m "Update image tags to latest build
+            
+            rpc-server: ${{ needs.build-and-push.outputs.rpc-server-tag }}
+            rpc-client: ${{ needs.build-and-push.outputs.rpc-client-tag }}
+            rpc-migration: ${{ needs.build-and-push.outputs.rpc-migration-tag }}"
+            git push
+          fi

@@ -1,4 +1,4 @@
-default: start
+default: local-build
 
 timestamp := `date +%Y%m%d%H%M%S`
 registry := "localhost:5000"
@@ -7,25 +7,15 @@ image-server := "rpc-server"
 image-migration := "rpc-migration"
 image-client := "rpc-client"
 
-overlay := "kustomize/overlays/dev"
-
-build-deploy image dockerfile context kustomize_subpath:
+# For local development only
+local-build-deploy image dockerfile context:
     @docker build -t {{registry}}/{{image}}:{{timestamp}} -f {{dockerfile}} {{context}}
-    @cd {{overlay}}/{{kustomize_subpath}} && kustomize edit set image {{image}}={{registry}}/{{image}}:{{timestamp}}
 
 [parallel]
-build:
-    @just build-deploy {{image-server}} Dockerfile . app
-    @just build-deploy {{image-client}} ./client/Dockerfile ./client app
-
-migration:
-    @just build-deploy {{image-migration}} Dockerfile.migration . app/migration
-    cd {{overlay}}/app/migration && kustomize edit set namesuffix -- -{{timestamp}} 
-    @kustomize build {{overlay}}/app/migration | kubectl apply -f -
-
-start:
-    @just build
-    @kustomize build {{overlay}}/app | kubectl apply -f -
+local-build:
+    @just local-build-deploy {{image-server}} Dockerfile .
+    @just local-build-deploy {{image-client}} ./client/Dockerfile ./client
+    @just local-build-deploy {{image-migration}} Dockerfile.migration .
 
 [working-directory: 'infra/bootstrap']
 infra-bootstrap:

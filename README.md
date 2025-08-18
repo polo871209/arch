@@ -15,7 +15,7 @@
 
 ### Infrastructure Stack
 
-- **Kubernetes** - Local cluster via Orbstack with Kustomize manifests
+- **Kubernetes** - Local cluster via Orbstack with GitOps deployment
 - **Service Mesh** - Istio with mTLS, traffic management, and telemetry
 - **GitOps** - ArgoCD for declarative deployments and automated sync
 - **Observability** - Complete O11y stack with correlation:
@@ -24,6 +24,32 @@
   - **Logs** - EFK stack (Elasticsearch, Fluent Bit, Kibana)
 - **Security** - Wolfi base images, Istio mTLS, cert-manager
 - **Protocols** - gRPC with Protobuf, REST APIs, OpenTelemetry OTLP
+
+## 🚀 CI/CD & GitOps
+
+### GitOps Architecture
+- **Main Repository** (this repo) - Source code, Dockerfiles, CI/CD pipelines
+- **Manifest Repository** - [arch-manifest](https://github.com/polo871209/arch-manifest) - Kubernetes manifests managed by ArgoCD
+
+### Deployment Flow
+1. **Code Push** → GitHub Actions builds Docker images → DockerHub
+2. **Automated Update** → GitHub Actions updates image tags in manifest repo using `kustomize edit`
+3. **GitOps Sync** → ArgoCD detects changes and deploys to Kubernetes cluster
+
+### Local Development
+```bash
+# Build images locally (for development only)
+just local-build
+
+# Deploy infrastructure
+just infra-bootstrap  # ArgoCD, observability stack
+just infra            # Databases, service mesh
+
+# Generate protobuf/gRPC code
+just proto
+```
+
+**Note**: For production deployments, the CI/CD pipeline automatically handles image building and deployment via GitOps.
 
 ### Architecture & SRE Best Practices
 
@@ -38,9 +64,11 @@
 #### Infrastructure & GitOps
 
 - [x] Kustomize bases/overlays + ArgoCD GitOps deployment
+- [x] **CI/CD pipelines with automated image updates via kustomize edit**
+- [x] **Separate manifest repository for GitOps workflow**
 - [x] Wolfi secure container images + CloudNativePG operator
 - [ ] Infrastructure as code (Terraform/Pulumi) for multi-environment
-- [ ] CI/CD pipelines with automated rollback and canary strategies
+- [ ] Canary deployments with automated rollback
 - [ ] Secrets management and configuration drift detection
 
 #### Service Mesh & Traffic Management
