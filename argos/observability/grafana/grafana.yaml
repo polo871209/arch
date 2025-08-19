@@ -13,7 +13,7 @@ spec:
       chart: grafana
       helm:
         valueFiles:
-          - $values/infra/observability/grafana/grafana-values.yaml
+          - $values/argos/observability/grafana/grafana-values.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

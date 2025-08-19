@@ -13,7 +13,7 @@ spec:
       targetRevision: 0.50.0
       helm:
         valueFiles:
-          - $values/infra/observability/efk/fluent-bit-values.yaml
+          - $values/argos/observability/efk/fluent-bit-values.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

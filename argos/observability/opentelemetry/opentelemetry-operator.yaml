@@ -13,7 +13,7 @@ spec:
       chart: opentelemetry-operator
       helm:
         valueFiles:
-          - $values/infra/observability/opentelemetry/opentelemetry-operator-values.yaml
+          - $values/argos/observability/opentelemetry/opentelemetry-operator-values.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

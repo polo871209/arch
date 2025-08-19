@@ -13,9 +13,9 @@ spec:
       targetRevision: 0.16.0
       helm:
         valueFiles:
-          - $values/infra/observability/efk/eck-stack-values.yaml
-          - $values/infra/observability/efk/eck-elasticsearch.yaml
-          - $values/infra/observability/efk/eck-kibana.yaml
+          - $values/argos/observability/efk/eck-stack-values.yaml
+          - $values/argos/observability/efk/eck-elasticsearch.yaml
+          - $values/argos/observability/efk/eck-kibana.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

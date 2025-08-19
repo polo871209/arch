@@ -17,7 +17,7 @@ spec:
       chart: cert-manager
       helm:
         valueFiles:
-          - $values/infra/security/cert-manager/cert-manager-values.yaml
+          - $values/argos/security/cert-manager/cert-manager-values.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

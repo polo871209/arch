@@ -13,7 +13,7 @@ spec:
       targetRevision: 2.13.0
       helm:
         valueFiles:
-          - $values/infra/service-mesh/kiali/kiali-operator-values.yaml
+          - $values/argos/service-mesh/kiali/kiali-operator-values.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

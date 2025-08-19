@@ -14,7 +14,7 @@ spec:
       targetRevision: 1.26.3
       helm:
         valueFiles:
-          - $values/infra/service-mesh/istio/istiod-values.yaml
+          - $values/argos/service-mesh/istio/istiod-values.yaml
     - repoURL: "https://github.com/polo871209/arch.git"
       targetRevision: main
       ref: values

@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: "https://github.com/polo871209/arch.git"
     targetRevision: main
-    path: infra/service-mesh/istio-config
+    path: argos/service-mesh/istio-config
   destination:
     server: https://kubernetes.default.svc
     namespace: istio-system
@@ -27,4 +27,3 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
-
