@@ -1,25 +1,12 @@
-# Version control
 .git
 .gitignore
-
-# CI/CD
 .github/
-
-# Documentation
 *.md
-README.md
-AGENTS.md
-
-# Python client code
+justfile
 client/
-
-# Infrastructure and deployment
 argos/
 iac/
-
-# Load testing
 load-test.go
-
-# Dockerfile files
 Dockerfile
 Dockerfile.migration
+.dockerignore
