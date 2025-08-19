@@ -3,13 +3,17 @@ name: GitOps CI/CD Pipeline
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   REGISTRY: docker.io
   IMAGE_NAME: az871209/arch
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  # Detect changes to determine what to build
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -36,77 +40,64 @@ jobs:
               - 'client/**'
               - 'proto/**'
 
-  build-server-client:
+  build-client:
     runs-on: ubuntu-latest
     needs: changes
-    strategy:
-      matrix:
-        include:
-          - component: rpc-server
-            dockerfile: ./Dockerfile
-            context: .
-          - component: rpc-client
-            dockerfile: ./client/Dockerfile
-            context: ./client
-
+    if: needs.changes.outputs.client == 'true'|| github.event_name == 'workflow_dispatch'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - name: Build and push client image
+        uses: ./.github/actions/build-push
         with:
+          component: client
+          context: ./client
+          dockerfile: ./client/Dockerfile
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          image-name: ${{ env.IMAGE_NAME }}
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          github-sha: ${{ github.sha }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+  build-server:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.server == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and push server image
+        uses: ./.github/actions/build-push
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.component }}-${{ github.sha }}
-          platforms: linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          component: server
+          context: .
+          dockerfile: ./Dockerfile
+          registry: ${{ env.REGISTRY }}
+          image-name: ${{ env.IMAGE_NAME }}
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          github-sha: ${{ github.sha }}
 
   build-migration:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.migration == 'true'
+    if: needs.changes.outputs.migration == 'true'|| github.event_name == 'workflow_dispatch'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4
+      - name: Build and push migration image
+        uses: ./.github/actions/build-push
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
+          component: migration
           context: .
-          file: ./Dockerfile.migration
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:rpc-migration-${{ github.sha }}
-          platforms: linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          dockerfile: ./Dockerfile.migration
+          registry: ${{ env.REGISTRY }}
+          image-name: ${{ env.IMAGE_NAME }}
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          github-sha: ${{ github.sha }}
 
   update-manifests:
-    needs: [changes, build-server-client, build-migration]
-    if: always() && (needs.build-server-client.result == 'success' || needs.build-migration.result == 'success')
     runs-on: ubuntu-latest
+    needs: [changes, build-client, build-server, build-migration]
+    if: always() && (needs.build-client.result == 'success' || needs.build-server.result == 'success' || needs.build-migration.result == 'success')
     steps:
       - name: Checkout manifest repository
         uses: actions/checkout@v4
@@ -123,18 +114,26 @@ jobs:
       - name: Update image tags using kustomize edit
         run: |
           cd manifests/overlays/dev
-          echo "Updating server tag to: rpc-server-${{ github.sha }}"
-          kustomize edit set image rpc-server="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:rpc-server-${{ github.sha }}"
-          echo "Updating client tag to: rpc-client-${{ github.sha }}"
-          kustomize edit set image rpc-client="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:rpc-client-${{ github.sha }}"
+
+          # Update server image if it was built
+          if [ "${{ needs.changes.outputs.server }}" == "true" ] && [ "${{ needs.build-server.result }}" == "success" ]; then
+            echo "Updating server tag to: rpc-server-${{ github.sha }}"
+            kustomize edit set image rpc-server="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:rpc-server-${{ github.sha }}"
+          fi
+
+          # Update client image if it was built
+          if [ "${{ needs.changes.outputs.client }}" == "true" ] && [ "${{ needs.build-client.result }}" == "success" ]; then
+            echo "Updating client tag to: rpc-client-${{ github.sha }}"
+            kustomize edit set image rpc-client="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:rpc-client-${{ github.sha }}"
+          fi
 
           # Update migration image if it was built
-          if [ "${{ needs.changes.outputs.migration }}" == "true" ]; then
+          if [ "${{ needs.changes.outputs.migration }}" == "true" ] && [ "${{ needs.build-migration.result }}" == "success" ]; then
             echo "Updating migration tag to: rpc-migration-${{ github.sha }}"
             cd migration
             kustomize edit set namesuffix -- -${{ github.sha }}
             kustomize edit set image rpc-migration="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:rpc-migration-${{ github.sha }}"
-            cd ../app
+            cd ..
           fi
 
           # Show changes
@@ -149,9 +148,26 @@ jobs:
           if git diff --quiet; then
             echo "No changes to commit"
           else
+            # Build commit message based on what was updated
             COMMIT_MSG="Update image tags to ${{ github.sha }}"
+            COMPONENTS=""
+            
+            if [ "${{ needs.changes.outputs.server }}" == "true" ] && [ "${{ needs.build-server.result }}" == "success" ]; then
+              COMPONENTS="${COMPONENTS} server"
+            fi
+            if [ "${{ needs.changes.outputs.client }}" == "true" ] && [ "${{ needs.build-client.result }}" == "success" ]; then
+              COMPONENTS="${COMPONENTS} client"
+            fi
+            if [ "${{ needs.changes.outputs.migration }}" == "true" ] && [ "${{ needs.build-migration.result }}" == "success" ]; then
+              COMPONENTS="${COMPONENTS} migration"
+            fi
+            
+            if [ -n "$COMPONENTS" ]; then
+              COMMIT_MSG="$COMMIT_MSG (${COMPONENTS# })"
+            fi
 
             git add .
-            git commit -m "$COMMIT_MSG$COMMIT_BODY"
+            git commit -m "$COMMIT_MSG"
             git push
           fi
+
