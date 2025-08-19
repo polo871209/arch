@@ -1,7 +1,7 @@
 {
   "kibana": {
     "base_url": "https://eck-stack-eck-kibana-kb-http.observability.svc.cluster.local:5601",
-    "api_key": "dm8xQW1KZ0JXNzBidWpmcG1UeW86eHNLYkJYaGxIeVY2dXo2TW5zWjdJZw==",
+    "api_key": "bmp6LXdKZ0JROTNSamNYd091S2o6RW5wQXRDbkNiUmxpVk8wam16V2VUdw==",
     "space_id": null,
     "timeout": 20.0,
     "http2": true,
