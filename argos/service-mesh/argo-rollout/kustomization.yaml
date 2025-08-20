@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argo-rollouts
+resources:
+  - https://gist.githubusercontent.com/polo871209/6a57e96435c707644d0d2a22f13b6967/raw/10f95ce49eefa9a2644bf06e6955d92cf999347a/argo-rollout-install.yaml
+
