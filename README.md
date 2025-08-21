@@ -1,10 +1,8 @@
 # Monorepo for learning
 
-~~Just some rpc learning~~
-
 ## 🏗️ Architecture Overview
 
-<img width="1535" height="1292" alt="Untitled-2025-03-26-1749" src="https://github.com/user-attachments/assets/a0df4883-9c86-44ce-96ab-c98d26291158" />
+<img width="2646" height="1272" alt="image" src="https://github.com/user-attachments/assets/ae3d23a0-8d73-4e48-88a1-bac8d6903b2d" />
 
 ### Core Services
 
@@ -18,6 +16,7 @@
 - **Kubernetes** - Local cluster via Orbstack with GitOps deployment
 - **Service Mesh** - Istio with mTLS, traffic management, and telemetry
 - **GitOps** - ArgoCD for declarative deployments and automated sync
+  - **Rollouts** - Argo rollouts with canary deployment
 - **Observability** - Complete O11y stack with correlation:
   - **Metrics** - Prometheus + Grafana dashboards
   - **Traces** - OpenTelemetry + Jaeger with B3 propagation
@@ -25,39 +24,18 @@
 - **Security** - Wolfi base images, Istio mTLS, cert-manager
 - **Protocols** - gRPC with Protobuf, REST APIs, OpenTelemetry OTLP
 
-## 🚀 CI/CD & GitOps
+## CI/CD & GitOps
 
 ### GitOps Architecture
+
 - **Main Repository** (this repo) - Source code, Dockerfiles, CI/CD pipelines
 - **Manifest Repository** - [arch-manifest](https://github.com/polo871209/arch-manifest) - Kubernetes manifests managed by ArgoCD
 
 ### Deployment Flow
+
 1. **Code Push** → GitHub Actions builds Docker images → DockerHub
 2. **Automated Update** → GitHub Actions updates image tags in manifest repo using `kustomize edit`
 3. **GitOps Sync** → ArgoCD detects changes and deploys to Kubernetes cluster
-
-### Local Development
-```bash
-# Build images locally (for development only)
-just local-build
-
-# Deploy infrastructure
-just argos-bootstrap  # ArgoCD, observability stack
-just argos            # Databases, service mesh
-
-# Generate protobuf/gRPC code
-just proto
-```
-
-**Note**: For production deployments, the CI/CD pipeline automatically handles image building and deployment via GitOps.
-
-### Architecture & SRE Best Practices
-
-- [ ] Design and document system architecture diagrams (service mesh, data flow, dependencies)
-- [ ] Document SLOs, SLIs, and SLAs for all critical services
-- [ ] Practice incident response
-- [ ] Design for high availability and disaster recovery (multi-zone, backup/restore)
-- [ ] Set up horizontal and vertical pod autoscaling in Kubernetes
 
 ### SRE Platform Engineering Roadmap
 
@@ -68,7 +46,7 @@ just proto
 - [x] **Separate manifest repository for GitOps workflow**
 - [x] Wolfi secure container images + CloudNativePG operator
 - [ ] Infrastructure as code (Terraform/Pulumi) for multi-environment
-- [ ] Canary deployments with automated rollback
+- [x] Canary deployments with automated rollback with analysis
 - [ ] Secrets management and configuration drift detection
 
 #### Service Mesh & Traffic Management
@@ -76,6 +54,7 @@ just proto
 - [x] Istio service mesh with mTLS and ingress gateway
 - [x] **Complete OpenTelemetry + Jaeger integration with propagation**
 - [x] **Unified trace correlation: Istio sidecar ↔ application spans**
+- [x] **Canary deployments with Argo Rollouts and traffic analysis**
 - [ ] Canary deployments with traffic shifting (weight/header-based routing)
 - [ ] Circuit breakers, retries, timeouts, and RBAC policies
 - [ ] Fault injection for chaos engineering
@@ -111,4 +90,3 @@ just proto
 - [ ] **Load testing, disaster recovery automation**
 - [ ] **Incident response with PagerDuty/Opsgenie integration**
 - [ ] Policy as code (OPA/Gatekeeper) and compliance scanning
-- [ ] Cost optimization, capacity planning, and automated remediation
