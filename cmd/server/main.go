@@ -16,10 +16,10 @@ import (
 	"grpc-server/internal/cache"
 	"grpc-server/internal/config"
 	"grpc-server/internal/database"
+	"grpc-server/internal/logging"
 	"grpc-server/internal/repository/postgres"
 	"grpc-server/internal/server"
 	"grpc-server/internal/tracing"
-	"grpc-server/internal/logging"
 	pb "grpc-server/pkg/pb"
 )
 
@@ -119,9 +119,9 @@ func main() {
 		cacheInterface = cache.NewTracedCache(valkeyCache, cfg.Tracing.ServiceName)
 	}
 
-	// Create and register the cached user service
-	userService := server.NewCachedUserServer(userRepo, cacheInterface, logger)
-	pb.RegisterUserServiceServer(grpcServer, userService)
+	// Create and register the combined service (user + test)
+	combinedService := server.NewCombinedServer(userRepo, cacheInterface, logger)
+	pb.RegisterUserServiceServer(grpcServer, combinedService)
 
 	// Enable reflection if configured
 	if cfg.Server.EnableReflection {

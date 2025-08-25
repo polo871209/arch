@@ -8,7 +8,7 @@ from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
-from .api import health_router, users_router
+from .api import health_router, test_router, users_router
 from .core.config import settings
 from .core.logging import create_access_log_middleware, setup_logging
 from .grpc_client.client import AsyncUserGRPCClient
@@ -64,6 +64,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(health_router)
+    app.include_router(test_router, prefix="/v1")
     app.include_router(users_router, prefix="/v1")
 
     return app

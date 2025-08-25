@@ -103,3 +103,17 @@ class ListUsersResponse(_message.Message):
     total: int
     message: str
     def __init__(self, users: _Optional[_Iterable[_Union[User, _Mapping]]] = ..., total: _Optional[int] = ..., message: _Optional[str] = ...) -> None: ...
+
+class TestErrorRequest(_message.Message):
+    __slots__ = ("status_code",)
+    STATUS_CODE_FIELD_NUMBER: _ClassVar[int]
+    status_code: str
+    def __init__(self, status_code: _Optional[str] = ...) -> None: ...
+
+class TestErrorResponse(_message.Message):
+    __slots__ = ("message", "trace_id")
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    TRACE_ID_FIELD_NUMBER: _ClassVar[int]
+    message: str
+    trace_id: str
+    def __init__(self, message: _Optional[str] = ..., trace_id: _Optional[str] = ...) -> None: ...
