@@ -22,7 +22,7 @@ jobs:
       client: ${{ steps.changes.outputs.client }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: changes
         with:
           filters: |
@@ -170,4 +170,3 @@ jobs:
             git commit -m "$COMMIT_MSG"
             git push
           fi
-
