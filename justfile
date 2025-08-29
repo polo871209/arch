@@ -34,3 +34,14 @@ proto:
 kibana: 
     @uv run main.py
 
+[working-directory: 'iac/grafana']
+grafana-init:
+    @jb install
+    @tofu init
+
+[working-directory: 'iac/grafana']
+grafana-update:
+    @tofu apply -auto-approve
+
+
+
