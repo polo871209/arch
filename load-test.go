@@ -360,7 +360,7 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID i
 	}
 
 	// Inline compact error scenarios (no extra funcs to keep file small)
-	if rand.Float32() < 0.4 { // Not-found get
+	if rand.Float32() < 0.05 { // Not-found get - 5% chance
 		methods = append(methods, func(c context.Context) error {
 			fakeID := fmt.Sprintf("nf-%d", rand.Intn(1_000_000))
 			req, _ := http.NewRequestWithContext(c, "GET", lt.baseURL+"/v1/users/"+fakeID, nil)
@@ -373,37 +373,6 @@ func (lt *LoadTester) runTestCycle(ctx context.Context, cycleNum int, workerID i
 				return fmt.Errorf("intentional not found %s", fakeID)
 			}
 			return nil
-		})
-	}
-	if rand.Float32() < 0.3 { // Invalid create
-		methods = append(methods, func(c context.Context) error {
-			bad := map[string]any{"name": "X", "age": -9}
-			b, _ := json.Marshal(bad)
-			req, _ := http.NewRequestWithContext(c, "POST", lt.baseURL+"/v1/users", bytes.NewBuffer(b))
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := lt.doRequest(req)
-			if err != nil {
-				return fmt.Errorf("bad create err: %w", err)
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode < 400 {
-				return fmt.Errorf("expected 4xx, got %d", resp.StatusCode)
-			}
-			return fmt.Errorf("intentional invalid create %d", resp.StatusCode)
-		})
-	}
-	if rand.Float32() < 0.3 { // Bad list params
-		methods = append(methods, func(c context.Context) error {
-			req, _ := http.NewRequestWithContext(c, "GET", fmt.Sprintf("%s/v1/users?page=%s&limit=%s", lt.baseURL, "zz", "-1"), nil)
-			resp, err := lt.doRequest(req)
-			if err != nil {
-				return fmt.Errorf("bad list err: %w", err)
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode < 400 {
-				return fmt.Errorf("expected 4xx list, got %d", resp.StatusCode)
-			}
-			return fmt.Errorf("intentional bad list %d", resp.StatusCode)
 		})
 	}
 

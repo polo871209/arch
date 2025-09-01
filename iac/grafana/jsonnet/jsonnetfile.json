@@ -11,5 +11,5 @@
       "version": "main"
     }
   ],
-  "legacyImports": true
+  "legacyImports": false
 }
