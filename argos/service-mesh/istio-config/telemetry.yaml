@@ -11,3 +11,6 @@ spec:
   accessLogging:
     - providers:
         - name: envoy
+  metrics:
+    - providers:
+        - name: prometheus
