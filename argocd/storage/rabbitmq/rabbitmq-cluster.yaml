@@ -1,8 +1,7 @@
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
-  name: default
+  name: rabbitmq
   namespace: storage
 spec:
   replicas: 1
-
