@@ -4,6 +4,7 @@ namespace: argocd
 resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.0.12/manifests/install.yaml
   - project.yaml
+  - repositories.yaml
 patches:
   - path: rollout-extension-patch.yaml
     target:
