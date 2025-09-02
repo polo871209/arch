@@ -6,8 +6,8 @@
 
 ### Core Services
 
-- **gRPC Server** (`cmd/server`, `internal/`) - Go-based user service with PostgreSQL persistence
-- **API Gateway** (`client/`) - Python FastAPI REST facade over gRPC
+- **gRPC Server** (`rpc-server/`) - Go-based user service with PostgreSQL persistence
+- **API Gateway** (`rpc-client/`) - Python FastAPI REST facade over gRPC
 - **Database** - PostgreSQL with CloudNativePG operator and sqlc code generation
 - **Cache** - Valkey (Redis-compatible) for session/user caching
 

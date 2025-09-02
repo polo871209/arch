@@ -6,10 +6,17 @@
 - App manifests: check `argocd/` directory for Kustomize configurations; check `~/app/arch-manifest` when examining app deployment structure
 - Stack: Istio; PostgreSQL; Valkey; Grafana/Prometheus/Jaeger/OpenTelemetry; EFK; ArgoCD
 
-## Build/Lint/Test
+## Code Style
 
-- Go: build `go build ./...`; tests `go test ./...`; single pkg `go test ./internal/server`; single test `go test ./internal/server -run '^TestName$'`
-- Go lint: `golangci-lint run` (or `go vet ./...`); SQL gen `sqlc generate`; Proto `just proto`
-- Python (client/): deps `cd client && uv sync`; tests `uv run pytest`; single `uv run pytest client/path/test_x.py::test_y -q`
-- Python lint/format: `uv run ruff check [--fix]`; `uv run ruff format`
-- Infra: `just argocd-bootstrap`; `just argos`; app `just local-build`; IaC `just kibana`
+### Go (rpc-server/)
+
+- Module: `grpc-server`, Go 1.24; imports: stdlib first, external, then local `grpc-server/internal/...`
+- Types: PascalCase structs/interfaces, camelCase fields, receiver names single letter of type
+- Errors: return explicit errors, use `fmt.Errorf` for wrapping; log with structured `slog.Logger`
+
+### Python (rpc-client/)
+
+- Python 3.13+; FastAPI app structure; imports: stdlib, external, local relative `.`
+- Style: `ruff format` (double quotes, 4-space indent); type hints with `pydantic` models
+- Async: prefer async/await, use `asynccontextmanager` for lifespans
+- Config: centralized in `core/config.py`; structured logging with stdlib `logging`

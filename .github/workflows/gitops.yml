@@ -27,18 +27,16 @@ jobs:
         with:
           filters: |
             migration:
-              - 'internal/database/migrations/**'
-              - 'Dockerfile.migration'
-              - 'sqlc.yaml'
+              - 'rpc-server/internal/database/migrations/**'
+              - 'rpc-server/Dockerfile.migration'
+              - 'rpc-server/sqlc.yaml'
             server:
-              - '**'
-              - '!client/**'
-              - '!internal/database/migrations/**'
-              - '!Dockerfile.migration'
+              - 'rpc-server/**'
+              - '!rpc-server/internal/database/migrations/**'
+              - '!rpc-server/Dockerfile.migration'
               - '!*.md'
             client:
-              - 'client/**'
-              - 'proto/**'
+              - 'rpc-client/**'
 
   build-client:
     runs-on: ubuntu-latest
@@ -50,8 +48,8 @@ jobs:
         uses: ./.github/actions/build-push
         with:
           component: client
-          context: ./client
-          dockerfile: ./client/Dockerfile
+          context: ./rpc-client
+          dockerfile: ./rpc-client/Dockerfile
           registry: ${{ env.REGISTRY }}
           image-name: ${{ env.IMAGE_NAME }}
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -68,8 +66,8 @@ jobs:
         uses: ./.github/actions/build-push
         with:
           component: server
-          context: .
-          dockerfile: ./Dockerfile
+          context: ./rpc-server
+          dockerfile: ./rpc-server/Dockerfile
           registry: ${{ env.REGISTRY }}
           image-name: ${{ env.IMAGE_NAME }}
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -86,8 +84,8 @@ jobs:
         uses: ./.github/actions/build-push
         with:
           component: migration
-          context: .
-          dockerfile: ./Dockerfile.migration
+          context: ./rpc-server
+          dockerfile: ./rpc-server/Dockerfile.migration
           registry: ${{ env.REGISTRY }}
           image-name: ${{ env.IMAGE_NAME }}
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}

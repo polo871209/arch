@@ -19,9 +19,6 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync --frozen
 
-COPY app/ ./app/
-COPY proto/ ./proto/
-
 # Runtime stage
 FROM cgr.dev/chainguard/wolfi-base:latest
 
@@ -42,7 +39,7 @@ COPY --from=builder /app/.venv /app/.venv
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY --from=builder /app/app/ ./app/
-COPY --from=builder /app/proto/ ./proto/
+COPY app/ ./app/
+COPY proto/ ./proto/
 
 EXPOSE 8000/tcp
