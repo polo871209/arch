@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rabbitmq-cluster-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: platform
+  sources:
+    - repoURL: registry-1.docker.io/bitnamicharts
+      chart: rabbitmq-cluster-operator
+      targetRevision: 4.4.34
+      helm:
+        valueFiles:
+          - $values/argocd/storage/rabbitmq-operator/rabbitmq-values.yaml
+    - repoURL: "https://github.com/polo871209/arch.git"
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

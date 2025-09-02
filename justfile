@@ -17,12 +17,12 @@ local-build:
     @just local-build-deploy {{image-client}} ./client/Dockerfile ./client
     @just local-build-deploy {{image-migration}} Dockerfile.migration .
 
-[working-directory: 'argos/bootstrap']
-argos-bootstrap:
+[working-directory: 'argocd/bootstrap']
+argocd-bootstrap:
     @kustomize build . | kubectl apply -f -
 
-[working-directory: 'argos']
-argos:
+[working-directory: 'argocd']
+argocd:
     @kustomize build . | kubectl apply -f -
 
 proto:
