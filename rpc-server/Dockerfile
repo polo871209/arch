@@ -29,11 +29,7 @@ RUN CGO_ENABLED=0 \
 RUN file server | grep -q "statically linked"
 
 # Runtime stage
-FROM cgr.dev/chainguard/wolfi-base:latest
-
-USER nonroot
-
-WORKDIR /app
+FROM scratch
 
 COPY --from=builder /app/server /usr/local/bin/server
 
