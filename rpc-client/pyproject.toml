@@ -5,12 +5,13 @@ description = "FastAPI client for User gRPC service"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi>=0.116.1",
+    "fastapi[standard]>=0.116.1",
     "grpcio>=1.74.0",
     "grpcio-tools>=1.74.0",
     "uvicorn[standard]>=0.35.0",
-    "pydantic>=2.11.6",
-    "pydantic[email]>=2.11.6",
+    "pydantic>=2.11.7",
+    "pydantic[email]>=2.11.7",
+    "pydantic-settings>=2.7.1",
     "protobuf>=6.31.1",
     "opentelemetry-instrumentation-fastapi>=0.57b0",
     "opentelemetry-instrumentation-grpc>=0.57b0",

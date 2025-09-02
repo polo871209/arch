@@ -1,36 +1,40 @@
-import os
+from pydantic import Field, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings:
-    def __init__(self) -> None:
-        # Server settings
-        self.grpc_host: str = self._require_env("GRPC_HOST")
-        self.grpc_port: int = int(self._require_env("GRPC_PORT"))
+class Settings(BaseSettings):
+    """Application configuration with environment variable validation."""
 
-        # API settings
-        self.api_host: str = self._require_env("API_HOST")
-        self.api_port: int = int(self._require_env("API_PORT"))
-        self.api_reload: bool = self._require_env("API_RELOAD").lower() == "true"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="forbid",
+    )
 
-        # Application settings
-        self.app_name: str = self._require_env("APP_NAME")
-        self.app_version: str = self._require_env("APP_VERSION")
-        self.debug: bool = self._require_env("DEBUG").lower() == "true"
+    # Server settings
+    grpc_host: str = Field(default="localhost", description="gRPC server host")
+    grpc_port: int = Field(default=50051, description="gRPC server port")
 
-        # Logging
-        self.log_level: str = self._require_env("LOG_LEVEL")
+    # API settings
+    api_host: str = Field(default="0.0.0.0", description="API server host")
+    api_port: int = Field(default=8000, description="API server port")
+    api_reload: bool = Field(default=False, description="Enable API auto-reload")
 
-    def _require_env(self, key: str) -> str:
-        """Get environment variable or raise error if not set."""
-        value = os.getenv(key)
-        if value is None:
-            raise ValueError(f"Environment variable {key} is required but not set")
-        return value
+    # Application settings
+    app_name: str = Field(default="User gRPC Client", description="Application name")
+    app_version: str = Field(default="0.1.0", description="Application version")
+    debug: bool = Field(default=False, description="Enable debug mode")
 
+    # Logging
+    log_level: str = Field(default="INFO", description="Logging level")
+
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def grpc_address(self) -> str:
         """Get the complete gRPC server address."""
         return f"{self.grpc_host}:{self.grpc_port}"
 
 
+# Create settings instance - will read from environment variables or use defaults
 settings = Settings()
