@@ -1,0 +1,38 @@
+crds:
+  enabled: true
+  upgradeJob:
+    enabled: true
+prometheus-windows-exporter:
+  prometheus:
+    monitor:
+      enabled: false
+      jobLabel: jobLabel
+alertmanager:
+  enabled: true
+grafana:
+  enabled: true
+  defaultDashboardsTimezone: Asia/Kuala_Lumpur
+  defaultDashboardsEditable: false
+  adminUser: admin
+  adminPassword: prom-operator
+  sidecar:
+    dashboards:
+      multicluster:
+        global:
+          enabled: true
+prometheusOperator:
+  enabled: true
+prometheus:
+  enabled: true
+  thanosService:
+    enabled: true
+  thanosServiceMonitor:
+    enabled: true
+    interval: ""
+  prometheusSpec:
+    replicas: 1
+    shards: 2
+    thanos:
+      baseImage: quay.io/thanos/thanos
+thanosRuler:
+  enabled: true
