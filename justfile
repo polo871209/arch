@@ -17,13 +17,12 @@ local-build:
     @just local-build-deploy {{image-client}} rpc-client/Dockerfile rpc-client
     @just local-build-deploy {{image-migration}} rpc-server/Dockerfile.migration rpc-server
 
-[working-directory: 'argocd/bootstrap']
-argocd-bootstrap:
-    @kustomize build . | kubectl apply -f -
 
-[working-directory: 'argocd']
-argocd:
-    @kustomize build . | kubectl apply -f -
+infra-init:
+    @helm install cert-manager oci://quay.io/jetstack/charts/cert-manager --version v1.18.2 --namespace cert-manager --set crds.enabled=true
+    @helm install istio-base istio/base -n istio-system --set defaultRevision=default 
+    @helm install istiod istio/istiod -n istio-system --wait --values ./kustomize/infra/values/istiod-values.yaml
+
 
 proto:
     @protoc -Iproto --go_out=rpc-server/pkg/pb --go_opt=paths=source_relative --go-grpc_out=rpc-server/pkg/pb --go-grpc_opt=paths=source_relative ./proto/user.proto

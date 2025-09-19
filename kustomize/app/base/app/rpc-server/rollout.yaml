@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/argoproj/argo-rollouts/refs/heads/master/docs/features/kustomize/rollout_cr_schema.json
+
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: rpc-server
+spec:
+  replicas: 3
+  strategy:
+    canary:
+      trafficRouting:
+        istio:
+          virtualService:
+            name: rpc-server
+            routes:
+              - primary
+          destinationRule:
+            name: rpc-server
+            canarySubsetName: canary
+            stableSubsetName: stable
+      analysis:
+        templates:
+          - templateName: success-rate
+            clusterScope: true
+        startingStep: 2
+        args:
+          - name: service_name
+            value: rpc-server
+      steps:
+        - setWeight: 20
+        - pause: {}
+        - setWeight: 50
+        - pause: { duration: 30s }
+        - setWeight: 100
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rpc-server
+      app.kubernetes.io/component: server
+      app.kubernetes.io/part-of: arch
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rpc-server
