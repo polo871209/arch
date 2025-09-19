@@ -4,6 +4,8 @@
 
 <img width="2646" height="1272" alt="image" src="https://github.com/user-attachments/assets/ae3d23a0-8d73-4e48-88a1-bac8d6903b2d" />
 
+> ⚠️ Removed argoCD && rollouts for faster&easier developments
+
 ### Core Services
 
 - **gRPC Server** (`rpc-server/`) - Go-based user service with PostgreSQL persistence

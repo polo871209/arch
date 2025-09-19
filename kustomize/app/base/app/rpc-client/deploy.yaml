@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-client
+spec:
+  template:
+    metadata: {}
+    spec:
+      serviceAccountName: rpc-client
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      initContainers:
+        - name: wait-for-rpc-server
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - until nc -z rpc-server.arch.svc.cluster.local 50051; do echo waiting for rpc server; sleep 2; done;
+          resources:
+            limits:
+              memory: 64Mi
+              cpu: 100m
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      containers:
+        - name: rpc-client
+          image: rpc-client
+          command: ["python", "-m", "uvicorn"]
+          args:
+            - "app.main:app"
+            - "--host=$(API_HOST)"
+            - "--port=$(API_PORT)"
+            - "--workers=$(API_WORKERS)"
+            - "--log-level=info"
+            - "--no-use-colors"
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rpc-client
+            - secretRef:
+                name: rpc-client
+                optional: true
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
