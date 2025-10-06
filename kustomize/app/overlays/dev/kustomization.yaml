@@ -5,7 +5,7 @@ resources:
 images:
 - name: rpc-client
   newName: localhost:5000/rpc-client
-  newTag: "20251006154616"
+  newTag: "20251006154658"
 - name: rpc-server
   newName: localhost:5000/rpc-server
-  newTag: "20251006154616"
+  newTag: "20251006154658"

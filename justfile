@@ -79,9 +79,9 @@ kibana:
 
 [working-directory: 'iac/grafana']
 grafana-init:
-    @jb install
+    @cd jsonnet && jb install
     @tofu init
 
 [working-directory: 'iac/grafana']
-grafana-update:
+grafana:
     @tofu apply -auto-approve
